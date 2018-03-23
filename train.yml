@@ -1,0 +1,34 @@
+# network parameters
+NUM_LABELS: 3 # (background, cosmic, neutrino)
+N_INITIAL_FILTERS:  12
+NETWORK_DEPTH:  4
+RESIDUAL_BLOCKS_PER_LAYER: 2
+LABEL_NAMES:  ['background', 'electron', 'muon', 'photon', 'proton', 'pion']
+
+# training parameters:
+N_MINIBATCH: 1
+MINIBATCH_SIZE: 1
+SAVE_ITERATION: 500
+REPORT_ITERATION: 10
+SUMMARY_ITERATION: 5
+BALANCE_LOSS:  True
+BASE_LEARNING_RATE:  0.0001
+TRAINING: True
+TRAINING_ITERATIONS: 1
+TRAIN_CONFIG:
+    FILE: './config/train_io.cfg'
+    FILLER: 'TrainIO'
+    VERBOSITY: 3
+    KEYWORD_DATA: 'main_data'
+    KEYWORD_LABEL: 'main_label'
+
+# TEST_CONFIG:
+#     CONFIG: 'config/test_io.cfg'
+#     FILLER: 'TrainIO'
+#     VERBOSITY: 3
+
+
+# General parameters:
+LOGDIR: 'log_uresnet_five_particle/'
+RESTORE: False
+GPU: 0
