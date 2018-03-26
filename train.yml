@@ -19,15 +19,15 @@ TRAIN_CONFIG:
     FILE: './config_singleplane/train_io.cfg'
     FILLER: 'TrainIO'
     VERBOSITY: 3
-    KEYWORD_DATA: 'main_data'
+    KEYWORD_DATA:  'main_data'
     KEYWORD_LABEL: 'main_label'
 
 TEST_CONFIG:
     FILE: './config_singleplane/test_io.cfg'
     FILLER: 'TestIO'
     VERBOSITY: 3
-    KEYWORD_DATA: 'main_data'
-    KEYWORD_LABEL: 'main_label'
+    KEYWORD_DATA:  'test_data'
+    KEYWORD_LABEL: 'test_label'
 
 # General parameters:
 LOGDIR: 'log_uresnet_five_particle/nu/'
