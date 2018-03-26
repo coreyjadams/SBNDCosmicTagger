@@ -24,7 +24,7 @@ TRAIN_CONFIG:
 
 TEST_CONFIG:
     FILE: 'config/test_io.cfg'
-    FILLER: 'TrainIO'
+    FILLER: 'TestIO'
     VERBOSITY: 3
     KEYWORD_DATA: 'main_data'
     KEYWORD_LABEL: 'main_label'
