@@ -256,6 +256,7 @@ class uresnet_trainer(object):
 
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
+        print "Acc all: {}, Acc non zero: {}".format(acc_all, acc_nonzero)
         if self._output:
           for entry in xrange(len(softmax)):
             self._output.read_entry(entry)
