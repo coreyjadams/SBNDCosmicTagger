@@ -83,27 +83,6 @@ class uresnet_trainer(object):
         dim_data = self._dataloaders['train'].fetch_data(
             self._config['TRAIN_CONFIG']['KEYWORD_DATA']).dim()
 
-        # For this network, we will massage the data a bit to make it fit more nicely into
-        # a network.
-
-        # Original data shapes are:
-        # U plane - (1280, 1666)
-        # V plane - (1280, 1666)
-        # Y plane - (1280, 1986)
-
-        # We make it fit into the following shapes for the network:
-        # U plane - (320, 512) = (2**6 * 5, 2**8)
-        # V plane - (320, 512) = (2**6 * 5, 2**8)
-        # Y plane - (320, 512) = (2**6 * 5, 2**8)
-
-        # For the U and V planes, 1666/4 = 416.5
-        # For the Y plane, 1986 / 4 = 496.5
-
-        # Therefore, we downsample (averaging) by a factor of 4 in each
-        # direction in all three planes.
-
-        print type(dim_data)
-        print dim_data
 
         # Net construction:
         self._net = uresnet(self._config)
@@ -236,7 +215,10 @@ class uresnet_trainer(object):
             sys.stdout.write('saved @ ' + str(ssf_path) + '\n')
             sys.stdout.flush()
 
-    def ana_step(self):
+    def ana_step(self, input_data, input_label):
+        return  self._net.inference(sess        = self._sess,
+                                    input_data  = input_data,
+                                    input_label = input_label)
         pass
 
     def batch_process(self):

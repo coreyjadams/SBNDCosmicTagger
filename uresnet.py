@@ -242,7 +242,6 @@ class uresnet(object):
     def _build_network(self, input_placeholder):
 
         x = input_placeholder
-        print "Initial shape: " + str(x.get_shape())
         # Initial convolution to get to the correct number of filters:
         x = tf.layers.conv2d(x, self._params['N_INITIAL_FILTERS'],
                              kernel_size=[7, 7],
@@ -256,7 +255,6 @@ class uresnet(object):
         # ReLU:
         x = tf.nn.relu(x)
 
-        print x.get_shape()
         # Need to keep track of the outputs of the residual blocks before downsampling, to feed
         # On the upsampling side
 
@@ -274,7 +272,6 @@ class uresnet(object):
             x = downsample_block(x, self._params['TRAINING'],
                                 batch_norm=True,
                                 name="downsample_{0}".format(i))
-            print x.get_shape()
 
 
         # At the bottom, do another residual block:
@@ -282,7 +279,6 @@ class uresnet(object):
             x = residual_block(x, self._params['TRAINING'],
                 batch_norm=True, name="deepest_block_{0}".format(j))
 
-        print x.get_shape()
 
         # Come back up the network:
         for i in xrange(self._params['NETWORK_DEPTH']-1, -1, -1):
