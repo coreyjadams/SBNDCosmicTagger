@@ -15,12 +15,12 @@ BALANCE_LOSS:  True
 BASE_LEARNING_RATE:  0.0001
 TRAINING: False
 ITERATIONS: 5
-TRAIN_CONFIG:
-    FILE: './config/train_io.cfg'
-    FILLER: 'TrainIO'
-    VERBOSITY: 3
-    KEYWORD_DATA: 'main_data'
-    KEYWORD_LABEL: 'main_label'
+#TRAIN_CONFIG:
+#    FILE: './config/train_io.cfg'
+#    FILLER: 'TrainIO'
+#    VERBOSITY: 3
+#    KEYWORD_DATA: 'main_data'
+#    KEYWORD_LABEL: 'main_label'
 
 # TEST_CONFIG:
 #     CONFIG: 'config/test_io.cfg'
@@ -35,6 +35,6 @@ ANA_CONFIG:
     KEYWORD_LABEL: 'main_label'
 
 # General parameters:
-LOGDIR: 'log_uresnet_five_particle/'
+LOGDIR: 'log_uresnet_five_particle/nue/'
 RESTORE: True
 GPU: 0
