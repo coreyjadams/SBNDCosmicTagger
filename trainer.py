@@ -242,6 +242,18 @@ class uresnet_trainer(object):
         batch_label  = self._dataloaders['ana'].fetch_data(
             self._config['ANA_CONFIG']['KEYWORD_LABEL']).data()
         batch_weight = None
+
+        # reshape right here:
+        batch_data = numpy.reshape(batch_data,
+            self._dataloaders['train'].fetch_data(
+                self._config['ANA_CONFIG']['KEYWORD_DATA']).dim()
+            )
+        batch_label = numpy.reshape(
+            batch_label, self._dataloaders['train'].fetch_data(
+                self._config['ANA_CONFIG']['KEYWORD_LABEL']).dim()
+            )
+
+
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
         if self._output:
