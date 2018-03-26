@@ -298,8 +298,8 @@ class uresnet_trainer(object):
               sparse3d.set(vs,data.meta())
             self._output.save_entry()
 
-        self._dataloaders['ana'].next(store_entries   = (not self._cfg.TRAIN),
-                                      store_event_ids = (not self._cfg.TRAIN))
+        self._dataloaders['ana'].next(store_entries   = (not self._config['TRAINING']),
+                                      store_event_ids = (not self._config['TRAINING']))
 
 
 
