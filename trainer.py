@@ -186,8 +186,18 @@ class uresnet_trainer(object):
             self._dataloaders['test'].next()
             test_data   = self._dataloaders['test'].fetch_data(
                 self._config['TEST_CONFIG']['KEYWORD_DATA']).data()
+
             test_label  = self._dataloaders['test'].fetch_data(
-                self._config['TEST_CONFIG']['KEYWORD_DATA']).data()
+                self._config['TEST_CONFIG']['KEYWORD_LABEL']).data()
+            # Reshape:
+            test_data = numpy.reshape(test_data,
+                self._dataloaders['test'].fetch_data(
+                    self._config['TEST_CONFIG']['KEYWORD_DATA']).dim()
+                )
+            test_label = numpy.reshape(test_label,
+                self._dataloaders['test'].fetch_data(
+                    self._config['TEST_CONFIG']['KEYWORD_LABEL']).dim()
+                )
             test_weight = None
             if self._config['BALANCE_LOSS']:
                 if 'KEYWORD_WEIGHT' in self._config['TEST_CONFIG']:
