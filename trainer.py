@@ -224,8 +224,8 @@ class uresnet_trainer(object):
     def batch_process(self):
 
         # Run iterations
-        for i in xrange(self._config['TRAINING_ITERATIONS']):
-            if self._config['TRAINING'] and self._iteration >= self._config['TRAINING_ITERATIONS']:
+        for i in xrange(self._config['ITERATIONS']):
+            if self._config['TRAINING'] and self._iteration >= self._config['ITERATIONS']:
                 print('Finished training (iteration %d)' % self._iteration)
                 break
 

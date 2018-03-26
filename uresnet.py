@@ -39,7 +39,7 @@ class uresnet(object):
             'BASE_LEARNING_RATE',
             'TRAINING',
             'RESTORE',
-            'TRAINING_ITERATIONS',
+            'ITERATIONS',
             'LABEL_NAMES',
         ]
 
