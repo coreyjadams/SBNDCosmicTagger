@@ -182,7 +182,7 @@ class uresnet(object):
         fd.update({self._input_image : images})
         if labels is not None:
             fd.update({self._input_labels : labels})
-        if self._params['BALANCE_LOSS']:
+        if self._params['TRAINING'] and self._params['BALANCE_LOSS']:
             if weights is None:
                 raise IncompleteFeedDict("Missing Weights when loss balancing requested.")
             fd.update({self._input_weights : weights})
