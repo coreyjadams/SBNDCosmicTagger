@@ -1,6 +1,6 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
-N_INITIAL_FILTERS:  12
+N_INITIAL_FILTERS:  24
 NETWORK_DEPTH:  4
 RESIDUAL_BLOCKS_PER_LAYER: 3
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
