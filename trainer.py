@@ -256,7 +256,6 @@ class uresnet_trainer(object):
 
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
-        print "Acc all: {}, Acc non zero: {}".format(acc_all, acc_nonzero)
         if self._output:
           for entry in xrange(len(softmax)):
             self._output.read_entry(entry)
@@ -298,6 +297,8 @@ class uresnet_trainer(object):
               vs = larcv.as_tensor3d(ssnet_result)
               sparse3d.set(vs,data.meta())
             self._output.save_entry()
+        else:
+            print "Acc all: {}, Acc non zero: {}".format(acc_all, acc_nonzero)
 
         self._dataloaders['ana'].next(store_entries   = (not self._config['TRAINING']),
                                       store_event_ids = (not self._config['TRAINING']))
