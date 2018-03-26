@@ -113,20 +113,21 @@ class uresnet(object):
 
 
         # Optimizer:
-        with tf.name_scope("training"):
-            self._global_step = tf.Variable(0, dtype=tf.int32,
-                trainable=False, name='global_step')
-            if self._params['BASE_LEARNING_RATE'] <= 0:
-                opt = tf.train.AdamOptimizer()
-            else:
-                opt = tf.train.AdamOptimizer(self._params['BASE_LEARNING_RATE'])
+        if self._params['TRAINING']:
+            with tf.name_scope("training"):
+                self._global_step = tf.Variable(0, dtype=tf.int32,
+                    trainable=False, name='global_step')
+                if self._params['BASE_LEARNING_RATE'] <= 0:
+                    opt = tf.train.AdamOptimizer()
+                else:
+                    opt = tf.train.AdamOptimizer(self._params['BASE_LEARNING_RATE'])
 
-            # Variables for minibatching:
-            self._zero_gradients =  [tv.assign(tf.zeros_like(tv)) for tv in self._accum_vars]
-            self._accum_gradients = [self._accum_vars[i].assign_add(gv[0]) for
-                                     i, gv in enumerate(opt.compute_gradients(self._loss))]
-            self._apply_gradients = opt.apply_gradients(zip(self._accum_vars, tf.trainable_variables()),
-                global_step = self._global_step)
+                # Variables for minibatching:
+                self._zero_gradients =  [tv.assign(tf.zeros_like(tv)) for tv in self._accum_vars]
+                self._accum_gradients = [self._accum_vars[i].assign_add(gv[0]) for
+                                         i, gv in enumerate(opt.compute_gradients(self._loss))]
+                self._apply_gradients = opt.apply_gradients(zip(self._accum_vars, tf.trainable_variables()),
+                    global_step = self._global_step)
 
 
         # Snapshotting:
