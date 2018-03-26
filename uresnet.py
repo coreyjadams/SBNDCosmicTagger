@@ -218,8 +218,8 @@ class uresnet(object):
 
     def run_test(self,sess, input_data, input_label, input_weight=None):
         feed_dict = self.feed_dict(images   = input_data,
-                                   labels  = input_label,
-                                   weights = input_weight)
+                                   labels   = input_label,
+                                   weights  = input_weight)
 
         ops = [self._loss, self._total_accuracy, self._non_bkg_accuracy]
         doc = ['loss', 'acc. all', 'acc. nonzero']
@@ -228,12 +228,12 @@ class uresnet(object):
 
     def inference(self,sess,input_data,input_label=None):
 
-        feed_dict = self.feed_dict(images=input_data, input_label=input_label)
+        feed_dict = self.feed_dict(images=input_data, labels=input_label)
 
         ops = [self._softmax]
         if input_label is not None:
-          ops.append(self._accuracy_allpix)
-          ops.append(self._accuracy_nonzero)
+          ops.append(self._total_accuracy)
+          ops.append(self._non_bkg_accuracy)
 
         return sess.run( ops, feed_dict = feed_dict )
 
