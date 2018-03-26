@@ -238,9 +238,9 @@ class uresnet_trainer(object):
 
         # Receive data (this will hang if IO thread is still running = this will wait for thread to finish & receive data)
         batch_data   = self._dataloaders['ana'].fetch_data(
-            self._config['TEST_CONFIG']['KEYWORD_DATA']).data()
+            self._config['ANA_CONFIG']['KEYWORD_DATA']).data()
         batch_label  = self._dataloaders['ana'].fetch_data(
-            self._config['TEST_CONFIG']['KEYWORD_LABEL']).data()
+            self._config['ANA_CONFIG']['KEYWORD_LABEL']).data()
         batch_weight = None
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
