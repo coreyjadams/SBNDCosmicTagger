@@ -45,7 +45,7 @@ class uresnet(object):
 
         for param in required_params:
             if param not in params:
-                raise ConfigurationException("Missing parameter "+ str(param))
+                raise ConfigurationException("Missing paragmeter "+ str(param))
 
         self._params = params
 

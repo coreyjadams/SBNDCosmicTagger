@@ -17,10 +17,11 @@ from uresnet import uresnet
 class uresnet_trainer(object):
 
     def __init__(self, config):
-        self._config = config
-        self._dataloaders = dict()
-        self._iteration = 0
+        self._config        = config
+        self._dataloaders   = dict()
+        self._iteration     = 0
         self._batch_metrics = None
+        self._output        = None
 
     def __del__(self):
         self.delete()
@@ -47,6 +48,8 @@ class uresnet_trainer(object):
 
     def initialize(self):
 
+        dim_data = None
+
         # Prepare data managers:
         if 'TRAIN_CONFIG' in self._config:
             train_io = larcv_threadio()
@@ -55,8 +58,11 @@ class uresnet_trainer(object):
                             'filler_cfg'  : self._config['TRAIN_CONFIG']['FILE']}
             train_io.configure(train_io_cfg)
             train_io.start_manager(self._config['MINIBATCH_SIZE'])
-
             self._dataloaders.update({'train' : train_io})
+            self._dataloaders['train'].next(store_entries   = (not self._config['TRAINING']),
+                                            store_event_ids = (not self._config['TRAINING']))
+            dim_data = self._dataloaders['train'].fetch_data(
+                self._config['TRAIN_CONFIG']['KEYWORD_DATA']).dim()
 
         if 'TEST_CONFIG' in self._config:
             test_io = larcv_threadio()
@@ -66,22 +72,28 @@ class uresnet_trainer(object):
             test_io.configure(test_io_cfg)
             test_io.start_manager(self._config['MINIBATCH_SIZE'])
             self._dataloaders.update({'test' : test_io})
+            self._dataloaders['test'].next(store_entries   = (not self._config['TRAINING']),
+                                           store_event_ids = (not self._config['TRAINING']))
+            dim_data = self._dataloaders['test'].fetch_data(
+                self._config['TEST_CONFIG']['KEYWORD_DATA']).dim()
 
         if 'ANA_CONFIG' in self._config:
             ana_io = larcv_threadio()
             ana_io_cfg = {'filler_name' : self._config['ANA_CONFIG']['FILLER'],
                           'verbosity'   : self._config['ANA_CONFIG']['VERBOSITY'],
                           'filler_cfg'  : self._config['ANA_CONFIG']['FILE']}
-            ana_io.configure(test_io_cfg)
+            ana_io.configure(ana_io_cfg)
             ana_io.start_manager(self._config['MINIBATCH_SIZE'])
             self._dataloaders.update({'ana' : ana_io})
+            self._dataloaders['ana'].next(store_entries   = (not self._config['TRAINING']),
+                                          store_event_ids = (not self._config['TRAINING']))
+            dim_data = self._dataloaders['ana'].fetch_data(
+                self._config['ANA_CONFIG']['KEYWORD_DATA']).dim()
+            # Output stream (optional)
+            if 'OUTPUT' in self._config['ANA_CONFIG']:
+                self._output = larcv.IOManager(self._config['ANA_CONFIG']['OUTPUT'])
+                self._output.initialize()
 
-
-        # Start up the network:
-        self._dataloaders['train'].next(store_entries   = (not self._config['TRAINING']),
-                                        store_event_ids = (not self._config['TRAINING']))
-        dim_data = self._dataloaders['train'].fetch_data(
-            self._config['TRAIN_CONFIG']['KEYWORD_DATA']).dim()
 
 
         # Net construction:
@@ -138,7 +150,7 @@ class uresnet_trainer(object):
             minibatch_weight = None
             if self._config['BALANCE_LOSS']:
                 if 'KEYWORD_WEIGHT' in self._config['TRAIN_CONFIG']:
-                    minibatch_weight = self._input_main.fetch_data(
+                    minibatch_weight = self._dataloaders['train'].fetch_data(
                         self._config['TRAIN_CONFIG']['KEYWORD_WEIGHT']).data()
                     minibatch_weight = numpy.reshape(
                         minibatch_weight, self._dataloaders['train'].fetch_data(
@@ -179,7 +191,7 @@ class uresnet_trainer(object):
             test_weight = None
             if self._config['BALANCE_LOSS']:
                 if 'KEYWORD_WEIGHT' in self._config['TEST_CONFIG']:
-                    minibatch_weight = self._input_main.fetch_data(
+                    minibatch_weight = self._dataloaders.fetch_data(
                         self._config['TEST_CONFIG']['KEYWORD_WEIGHT']).data()
                 else:
                     test_weight = self.compute_weights(test_label)
@@ -215,11 +227,69 @@ class uresnet_trainer(object):
             sys.stdout.write('saved @ ' + str(ssf_path) + '\n')
             sys.stdout.flush()
 
-    def ana_step(self, input_data, input_label):
+    def ana(self, input_data, input_label):
         return  self._net.inference(sess        = self._sess,
                                     input_data  = input_data,
                                     input_label = input_label)
         pass
+
+
+    def ana_step(self):
+
+        # Receive data (this will hang if IO thread is still running = this will wait for thread to finish & receive data)
+        batch_data   = self._dataloaders['ana'].fetch_data(
+            self._config['TEST_CONFIG']['KEYWORD_DATA']).data()
+        batch_label  = self._dataloaders['ana'].fetch_data(
+            self._config['TEST_CONFIG']['KEYWORD_LABEL']).data()
+        batch_weight = None
+        softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
+                                               input_label = batch_label)
+        if self._output:
+          for entry in xrange(len(softmax)):
+            self._output.read_entry(entry)
+            data  = np.array(batch_data[entry]).reshape(softmax.shape[1:-1])
+            entries   = self._input_main.fetch_entries()
+            event_ids = self._input_main.fetch_event_ids()
+
+          for entry in xrange(len(softmax)):
+            self._output.read_entry(entries[entry])
+            data  = np.array(batch_data[entry]).reshape(softmax.shape[1:-1])
+            label = np.array(batch_label[entry]).reshape(softmax.shape[1:-1])
+
+            shower_score, track_score = (None,None)
+            data_2d = len(softmax.shape) == 4
+            # 3D case
+            if data_2d:
+              shower_score = softmax[entry,:,:,1]
+              track_score  = softmax[entry,:,:,2]
+            else:
+              shower_score = softmax[entry,:,:,:,1]
+              track_score  = softmax[entry,:,:,:,2]
+
+            sum_score = shower_score + track_score
+            shower_score = shower_score / sum_score
+            track_score  = track_score  / sum_score
+
+            ssnet_result = (shower_score > track_score).astype(np.float32) + (track_score >= shower_score).astype(np.float32) * 2.0
+            nonzero_map  = (data > 1.0).astype(np.int32)
+            ssnet_result = (ssnet_result * nonzero_map).astype(np.float32)
+
+            if data_2d:
+              larcv_data = self._output.get_data("image2d","data")
+              larcv_out  = self._output.get_data("sparse2d","ssnet")
+              vs = larcv.as_image2d(ssnet_result)
+              sparse3d.set(vs,data.meta())
+            else:
+              larcv_data = self._output.get_data("sparse3d","data")
+              larcv_out  = self._output.get_data("sparse3d","ssnet")
+              vs = larcv.as_tensor3d(ssnet_result)
+              sparse3d.set(vs,data.meta())
+            self._output.save_entry()
+
+        self._input_main.next(store_entries   = (not self._cfg.TRAIN),
+                              store_event_ids = (not self._cfg.TRAIN))
+
+
 
     def batch_process(self):
 
