@@ -185,7 +185,8 @@ def upsample_block(input_tensor,
                    is_training,
                    batch_norm=False,
                    n_output_filters=0,
-                   name=""):
+                   name="",
+                   reuse=False):
     """
     @brief      Create a residual block and apply it to the input tensor
 

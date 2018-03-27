@@ -1,14 +1,14 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
-N_INITIAL_FILTERS:  12
+N_INITIAL_FILTERS:  1
 NETWORK_DEPTH:  4
-RESIDUAL_BLOCKS_PER_LAYER: 3
+RESIDUAL_BLOCKS_PER_LAYER: 1
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
-NPLANES: 1
+NPLANES: 3
 
 # training parameters:
 N_MINIBATCH: 1
-MINIBATCH_SIZE: 12
+MINIBATCH_SIZE: 2
 SAVE_ITERATION: 500
 REPORT_ITERATION: 10
 SUMMARY_ITERATION: 5
@@ -17,14 +17,14 @@ BASE_LEARNING_RATE:  0.0001
 TRAINING: True
 ITERATIONS: 5
 TRAIN_CONFIG:
-    FILE: './config_singleplane/train_io.cfg'
+    FILE: './config_threeplane/train_io.cfg'
     FILLER: 'TrainIO'
     VERBOSITY: 3
     KEYWORD_DATA:  'main_data'
     KEYWORD_LABEL: 'main_label'
 
 # TEST_CONFIG:
-#     FILE: './config_singleplane/test_io.cfg'
+#     FILE: './config_threeplane/test_io.cfg'
 #     FILLER: 'TestIO'
 #     VERBOSITY: 3
 #     KEYWORD_DATA:  'test_data'
