@@ -253,7 +253,7 @@ class uresnet(object):
                                    labels   = input_label,
                                    weights  = input_weight)
 
-        ops = [self._loss, self._total_accuracy, self._non_bkg_accuracy]
+        ops = [self._loss, self._all_plane_accuracy, self._all_plane_non_bkg_accuracy]
         doc = ['loss', 'acc. all', 'acc. nonzero']
 
         return sess.run(ops, feed_dict = feed_dict ), doc
@@ -264,8 +264,8 @@ class uresnet(object):
 
         ops = [self._softmax]
         if input_label is not None:
-          ops.append(self._total_accuracy)
-          ops.append(self._non_bkg_accuracy)
+          ops.append(self._all_plane_accuracy)
+          ops.append(self._all_plane_non_bkg_accuracy)
 
         return sess.run( ops, feed_dict = feed_dict )
 
