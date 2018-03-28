@@ -98,8 +98,9 @@ class uresnet_trainer(object):
 
         # Net construction:
         self._net = uresnet(self._config)
+        print "Begin constructing network"
         self._net.construct_network(dims=dim_data)
-
+        print "Done constructing network."
         #
         # Network variable initialization
         #
@@ -129,11 +130,16 @@ class uresnet_trainer(object):
         summary_step = 'SUMMARY_ITERATION' in self._config and (self._iteration % self._config['SUMMARY_ITERATION']) == 0
         checkpt_step = 'SAVE_ITERATION' in self._config and (self._iteration % self._config['SAVE_ITERATION']) == 0
 
+        # We keep track of time spent on data IO and GPU calculations
+        time_io   = 0.0
+        time_comp = 0.0
+
         # Nullify the gradients
         self._net.zero_gradients(self._sess)
 
         # Loop over minibatches
         for j in xrange(self._config['N_MINIBATCH']):
+            io_start = time.time()
             minibatch_data   = self._dataloaders['train'].fetch_data(
                 self._config['TRAIN_CONFIG']['KEYWORD_DATA']).data()
             # reshape right here:
@@ -159,16 +165,23 @@ class uresnet_trainer(object):
                 else:
                     minibatch_weight = self.compute_weights(minibatch_label)
             # perform per-event normalization
-
-
+            io_end = time.time()
+            time_io += io_end - io_start
             # compute gradients
+            gpu_start = time.time()
             res,doc = self._net.accum_gradients(sess         = self._sess,
                                                 input_data   = minibatch_data,
                                                 input_label  = minibatch_label,
                                                 input_weight = minibatch_weight)
+            gpu_end  = time.time()
+            time_gpu = gpu_end - gpu_start
 
+            io_start = time.time()
             self._dataloaders['train'].next(store_entries   = (not self._config['TRAINING']),
                                             store_event_ids = (not self._config['TRAINING']))
+            io_end   = time.time()
+
+            time_io += io_end - io_start
 
             if self._batch_metrics is None:
                 self._batch_metrics = numpy.zeros((self._config['N_MINIBATCH'],len(res)-1),dtype=numpy.float32)
@@ -177,8 +190,10 @@ class uresnet_trainer(object):
             self._batch_metrics[j,:] = res[1:]
 
         # update
+        gpu_start = time.time()
         self._net.apply_gradients(self._sess)
-
+        gpu_end   = time.time()
+        time_gpu += gpu_end - gpu_start
 
         # read-in test data set if needed
         (test_data, test_label, test_weight) = (None,None,None)
@@ -215,6 +230,7 @@ class uresnet_trainer(object):
                 res,doc = self._net.run_test(self._sess, test_data, test_label, test_weight)
                 sys.stdout.write('Test set: ')
                 self._report(res,doc)
+            sys.stdout.write(" -- IO Time: {0}\t GPU Time: {1}\n".format(time_io, time_gpu))
 
         # Save log
         if summary_step:
