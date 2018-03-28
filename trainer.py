@@ -52,6 +52,7 @@ class uresnet_trainer(object):
 
         # Prepare data managers:
         if 'TRAIN_CONFIG' in self._config:
+            start = time.time()
             train_io = larcv_threadio()
             train_io_cfg = {'filler_name' : self._config['TRAIN_CONFIG']['FILLER'],
                             'verbosity'   : self._config['TRAIN_CONFIG']['VERBOSITY'],
@@ -63,8 +64,11 @@ class uresnet_trainer(object):
                                             store_event_ids = (not self._config['TRAINING']))
             dim_data = self._dataloaders['train'].fetch_data(
                 self._config['TRAIN_CONFIG']['KEYWORD_DATA']).dim()
+            end = time.time()
+            sys.stdout.write("Time to start TRAIN IO: {0:.2}s\n".format(end - start))
 
         if 'TEST_CONFIG' in self._config:
+            start = time.time()
             test_io = larcv_threadio()
             test_io_cfg = {'filler_name' : self._config['TEST_CONFIG']['FILLER'],
                             'verbosity'  : self._config['TEST_CONFIG']['VERBOSITY'],
@@ -76,8 +80,11 @@ class uresnet_trainer(object):
                                            store_event_ids = (not self._config['TRAINING']))
             dim_data = self._dataloaders['test'].fetch_data(
                 self._config['TEST_CONFIG']['KEYWORD_DATA']).dim()
+            end = time.time()
+            sys.stdout.write("Time to start TEST IO: {0:.2}s\n".format(end - start))
 
         if 'ANA_CONFIG' in self._config:
+            start = time.time()
             ana_io = larcv_threadio()
             ana_io_cfg = {'filler_name' : self._config['ANA_CONFIG']['FILLER'],
                           'verbosity'   : self._config['ANA_CONFIG']['VERBOSITY'],
@@ -90,6 +97,9 @@ class uresnet_trainer(object):
             dim_data = self._dataloaders['ana'].fetch_data(
                 self._config['ANA_CONFIG']['KEYWORD_DATA']).dim()
             # Output stream (optional)
+            end = time.time()
+            sys.stdout.write("Time to start ANA IO: {0:.2}s\n".format(end - start))
+
             if 'OUTPUT' in self._config['ANA_CONFIG']:
                 self._output = larcv.IOManager(self._config['ANA_CONFIG']['OUTPUT'])
                 self._output.initialize()
@@ -97,10 +107,12 @@ class uresnet_trainer(object):
 
 
         # Net construction:
+        start = time.time()
+        sys.stdout.write("Begin constructing network\n")
         self._net = uresnet(self._config)
-        print "Begin constructing network"
         self._net.construct_network(dims=dim_data)
-        print "Done constructing network."
+        end = time.time()
+        sys.stdout.write("Done constructing network. ({0:.2}s)\n".format(end-start))
         #
         # Network variable initialization
         #
@@ -230,7 +242,7 @@ class uresnet_trainer(object):
                 res,doc = self._net.run_test(self._sess, test_data, test_label, test_weight)
                 sys.stdout.write('Test set: ')
                 self._report(res,doc)
-            sys.stdout.write(" -- IO Time: {0}\t GPU Time: {1}\n".format(time_io, time_gpu))
+            sys.stdout.write(" -- IO Time: {0:.2}s\t GPU Time: {1:.2}s\n".format(time_io, time_gpu))
 
         # Save log
         if summary_step:
