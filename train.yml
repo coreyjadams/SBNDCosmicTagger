@@ -1,14 +1,14 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
-N_INITIAL_FILTERS:  24
+N_INITIAL_FILTERS:  2
 NETWORK_DEPTH:  4
-RESIDUAL_BLOCKS_PER_LAYER: 3
+RESIDUAL_BLOCKS_PER_LAYER: 1
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
 NPLANES: 1
 
 # training parameters:
-N_MINIBATCH: 2
-MINIBATCH_SIZE: 6
+N_MINIBATCH: 4
+MINIBATCH_SIZE: 2
 SAVE_ITERATION: 500
 REPORT_ITERATION: 10
 SUMMARY_ITERATION: 5
@@ -31,6 +31,6 @@ TRAIN_CONFIG:
 #     KEYWORD_LABEL: 'test_label'
 
 # General parameters:
-LOGDIR: 'log_uresnet_five_particle/nu/'
+LOGDIR: 'log_sbnd_cosmictagger/nu/'
 RESTORE: False
 GPU: 0

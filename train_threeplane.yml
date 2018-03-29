@@ -1,21 +1,21 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
 N_INITIAL_FILTERS:  1
-NETWORK_DEPTH:  4
+NETWORK_DEPTH:  2
 RESIDUAL_BLOCKS_PER_LAYER: 1
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
 NPLANES: 3
 
 # training parameters:
-N_MINIBATCH: 1
-MINIBATCH_SIZE: 2
+N_MINIBATCH: 3
+MINIBATCH_SIZE: 4
 SAVE_ITERATION: 500
-REPORT_ITERATION: 10
+REPORT_ITERATION: 1
 SUMMARY_ITERATION: 5
 BALANCE_LOSS:  True
-BASE_LEARNING_RATE:  0.0001
+BASE_LEARNING_RATE:  0.001
 TRAINING: True
-ITERATIONS: 5
+ITERATIONS: 20000
 TRAIN_CONFIG:
     FILE: './config_threeplane/train_io.cfg'
     FILLER: 'TrainIO'
@@ -23,14 +23,14 @@ TRAIN_CONFIG:
     KEYWORD_DATA:  'main_data'
     KEYWORD_LABEL: 'main_label'
 
-# TEST_CONFIG:
-#     FILE: './config_threeplane/test_io.cfg'
-#     FILLER: 'TestIO'
-#     VERBOSITY: 3
-#     KEYWORD_DATA:  'test_data'
-#     KEYWORD_LABEL: 'test_label'
+TEST_CONFIG:
+    FILE: './config_threeplane/test_io.cfg'
+    FILLER: 'TestIO'
+    VERBOSITY: 3
+    KEYWORD_DATA:  'test_data'
+    KEYWORD_LABEL: 'test_label'
 
 # General parameters:
-LOGDIR: 'log_uresnet_five_particle/nu/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane/'
 RESTORE: False
 GPU: 0
