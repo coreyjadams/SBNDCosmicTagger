@@ -154,7 +154,7 @@ class uresnet(object):
                 # Add the loss to the summary:
                 tf.summary.scalar("Total_Loss_plane{0}".format(p), self._loss_by_plane[p])
 
-            self._loss = tf.reduce_mean(self._loss_by_plane)
+            self._loss = tf.reduce_sum(self._loss_by_plane)
             tf.summary.scalar("Total_Loss", self._loss)
 
         sys.stdout.write(" - Finished cross entropy [{0:.2}s]\n".format(time.time() - start))
