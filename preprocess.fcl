@@ -3,10 +3,10 @@ ProcessDriver: {
   EnableFilter:    false
   RandomAccess:    0
   RandomSeed:      0
-  ProcessType:     ["Cluster2DThreshold","CosmicNeutrinoSegLabel","CompressAndEmbed"]
-  ProcessName:     ["Cluster2DThreshold","CosmicNeutrinoSegLabel","CompressAndEmbed"]
-  StartEntry:      0
-  NumEntries:      5
+  ProcessType:     ["Cluster2DThreshold","CompressAndEmbed","CosmicNeutrinoSegLabel"]
+  ProcessName:     ["Cluster2DThreshold","CompressAndEmbed","CosmicNeutrinoSegLabel"]
+#  StartEntry:      0
+#  NumEntries:      5
 
   IOManager: {
     Verbosity:   2
@@ -33,13 +33,13 @@ ProcessDriver: {
       NeutrinoLabel:     2
     }
     CompressAndEmbed: {
-      Producer:          ["sbndwire","sbnd_cosmicseg","sbndvertex"]
-      DataType:          ["image2d","image2d","cluster2d"]
-      RowCompression:    [4, 4, 4]
-      ColCompression:    [4, 4, 4]
-      Mode:              [0, 0, 0]
-      OutputCols:        [512, 512, 512]
-      OutputRows:        [320, 320, 320]
+      Producer:          ["sbndwire","sbnd_cosmicseg","sbndvertex","sbndseg_threshold"]
+      DataType:          ["image2d","image2d","cluster2d","cluster2d"]
+      RowCompression:    [4, 4, 4, 4]
+      ColCompression:    [4, 4, 4, 4]
+      Mode:              [0, 0, 0, 0]
+      OutputCols:        [512, 512, 512, 512]
+      OutputRows:        [320, 320, 320, 320]
     }
   }
 }
