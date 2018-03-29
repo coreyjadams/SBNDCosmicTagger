@@ -1,4 +1,6 @@
 import sys
+import time
+
 
 import tensorflow as tf
 
@@ -59,7 +61,7 @@ class uresnet(object):
         tf.reset_default_graph()
 
 
-
+        start = time.time()
         # Initialize the input layers:
         self._input_image  = tf.placeholder(tf.float32, dims, name="input_image")
         self._input_labels = tf.placeholder(tf.int64, dims, name="input_image")
@@ -77,8 +79,12 @@ class uresnet(object):
         for p in xrange(len(weights)):
             weights[p] = tf.squeeze(weights[p], axis=-1)
 
-
+        sys.stdout.write(" - Finished input placeholders [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
         logits_by_plane = self._build_network(self._input_image)
+
+        sys.stdout.write(" - Finished Network graph [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
         # for p in xrange(len(logits_by_plane)):
         #     print "logits_by_plane[{0}].get_shape(): ".format(p) + str(logits_by_plane[p].get_shape())
         self._softmax = [tf.nn.softmax(logits) for logits in logits_by_plane ]
@@ -95,6 +101,8 @@ class uresnet(object):
             self._accum_vars = [tf.Variable(tv.initialized_value(),
                                 trainable=False) for tv in tf.trainable_variables()]
 
+        sys.stdout.write(" - Finished gradient accumulation [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
 
         # Accuracy calculations:
         with tf.name_scope('accuracy'):
@@ -126,6 +134,8 @@ class uresnet(object):
             tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
             tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
 
+        sys.stdout.write(" - Finished accuracy [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
 
         # Loss calculations:
         with tf.name_scope('cross_entropy'):
@@ -147,6 +157,8 @@ class uresnet(object):
             self._loss = tf.reduce_mean(self._loss_by_plane)
             tf.summary.scalar("Total_Loss", self._loss)
 
+        sys.stdout.write(" - Finished cross entropy [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
 
         # Optimizer:
         if self._params['TRAINING']:
@@ -168,6 +180,8 @@ class uresnet(object):
                 self._apply_gradients = opt.apply_gradients(zip(self._accum_vars, tf.trainable_variables()),
                     global_step = self._global_step)
 
+        sys.stdout.write(" - Finished optimizer [{0:.2}s]\n".format(time.time() - start))
+        start = time.time()
 
         # Snapshotting:
         with tf.name_scope('snapshot'):
@@ -184,6 +198,7 @@ class uresnet(object):
 
         # Merge the summaries:
         self._merged_summary = tf.summary.merge_all()
+        sys.stdout.write(" - Finished snapshotting [{0:.2}s]\n".format(time.time() - start))
 
 
     def apply_gradients(self,sess):
