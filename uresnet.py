@@ -38,6 +38,7 @@ class uresnet(object):
             'NETWORK_DEPTH',
             'RESIDUAL_BLOCKS_PER_LAYER',
             'BALANCE_LOSS',
+            'BATCH_NORM'
             'LOGDIR',
             'BASE_LEARNING_RATE',
             'TRAINING',
@@ -333,12 +334,12 @@ class uresnet(object):
 
                 for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
                     x[p] = residual_block(x[p], self._params['TRAINING'],
-                                          batch_norm=True,
+                                          batch_norm=self._params['BATCH_NORM'],
                                           name="resblock_down_plane{0}_{1}_{2}".format(p, i, j))
 
                 network_filters[p].append(x[p])
                 x[p] = downsample_block(x[p], self._params['TRAINING'],
-                                        batch_norm=True,
+                                        batch_norm=self._params['BATCH_NORM'],
                                         name="downsample_plane{0}_{1}".format(p,i))
 
                 # print "Plane {p}, layer {i}: x[{p}].get_shape(): {s}".format(
@@ -353,7 +354,7 @@ class uresnet(object):
         # At the bottom, do another residual block:
         for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
             x = residual_block(x, self._params['TRAINING'],
-                batch_norm=True, name="deepest_block_{0}".format(j))
+                batch_norm=self._params['BATCH_NORM'], name="deepest_block_{0}".format(j))
 
         # print "Shape after deepest block: " + str(x.get_shape())
 
@@ -381,7 +382,7 @@ class uresnet(object):
                 # Upsample:
                 x[p] = upsample_block(x[p],
                                       self._params['TRAINING'],
-                                      batch_norm=True,
+                                      batch_norm=self._params['BATCH_NORM'],
                                       n_output_filters=n_filters,
                                       name="upsample_plane{0}_{1}".format(p,i))
 
@@ -408,7 +409,7 @@ class uresnet(object):
                 # Residual
                 for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
                     x[p] = residual_block(x[p], self._params['TRAINING'],
-                                          batch_norm=True,
+                                          batch_norm=self._params['BATCH_NORM'],
                                           name="resblock_up_plane{0}_{1}_{2}".format(p,i, j))
 
                 # print "Up end, Plane {p}, layer {i}: x[{p}].get_shape(): {s}".format(
@@ -420,7 +421,7 @@ class uresnet(object):
 
             x[p] = residual_block(x[p],
                     self._params['TRAINING'],
-                    batch_norm = True,
+                    batch_norm self._params['BATCH_NORM'] True,
                     name="FinalResidualBlock_plane{0}".format(p))
 
             # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
