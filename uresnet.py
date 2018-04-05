@@ -421,7 +421,7 @@ class uresnet(object):
 
             x[p] = residual_block(x[p],
                     self._params['TRAINING'],
-                    batch_norm self._params['BATCH_NORM'] True,
+                    batch_norm=self._params['BATCH_NORM'],
                     name="FinalResidualBlock_plane{0}".format(p))
 
             # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
