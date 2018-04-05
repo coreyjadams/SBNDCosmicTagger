@@ -28,7 +28,7 @@ ITERATIONS: 5
 #     VERBOSITY: 3
 
 ANA_CONFIG:
-    FILE: './config_singleplane/ana_io_nue.cfg'
+    FILE: './config_threeplane/ana_io_nue.cfg'
     FILLER: 'ValIO'
     VERBOSITY: 3
     KEYWORD_DATA: 'main_data'
