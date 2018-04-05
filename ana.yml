@@ -4,6 +4,7 @@ N_INITIAL_FILTERS:  24
 NETWORK_DEPTH:  4
 RESIDUAL_BLOCKS_PER_LAYER: 3
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
+NPLANES: 1
 
 # training parameters:
 N_MINIBATCH: 1
@@ -28,13 +29,13 @@ ITERATIONS: 5
 #     VERBOSITY: 3
 
 ANA_CONFIG:
-    FILE: './config_threeplane/ana_io_nue.cfg'
+    FILE: './config_threeplane/ana_io.cfg'
     FILLER: 'ValIO'
     VERBOSITY: 3
-    KEYWORD_DATA: 'main_data'
-    KEYWORD_LABEL: 'main_label'
+    KEYWORD_DATA: 'ana_data'
+    KEYWORD_LABEL: 'ana_label'
 
 # General parameters:
-LOGDIR: 'log_uresnet_five_particle/nue/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane_heavy/'
 RESTORE: True
 GPU: 0

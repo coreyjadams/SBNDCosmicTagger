@@ -1,6 +1,6 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
-N_INITIAL_FILTERS:  8
+N_INITIAL_FILTERS:  4
 NETWORK_DEPTH:  4
 RESIDUAL_BLOCKS_PER_LAYER: 3
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
@@ -31,6 +31,6 @@ TEST_CONFIG:
     KEYWORD_LABEL: 'test_label'
 
 # General parameters:
-LOGDIR: 'log_sbnd_cosmictagger/3plane/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane_light/'
 RESTORE: False
 GPU: 0
