@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
+import tensorflow.contrib.slim as slim
 import numpy
 
 
@@ -29,10 +29,11 @@ def residual_block(input_tensor,
         with tf.variable_scope(name + "_0"):
             # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
             # Conv2d:
@@ -54,10 +55,11 @@ def residual_block(input_tensor,
 
             # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
 
@@ -110,10 +112,11 @@ def downsample_block(input_tensor,
         with tf.variable_scope(name + "_0"):
             # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
 
@@ -136,10 +139,11 @@ def downsample_block(input_tensor,
 
             # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
             # Conv2d:
@@ -214,10 +218,11 @@ def upsample_block(input_tensor,
         with tf.variable_scope(name + "_0"):
             # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
             # Conv2d:
@@ -239,10 +244,11 @@ def upsample_block(input_tensor,
 
              # Batch normalization is applied first:
             if batch_norm:
-                x = tf.layers.batch_normalization(x,
-                                                  training=is_training,
+                x = tf.contrib.layers.batch_norm(x,
+                                                  updates_collections=None,
+                                                  is_training=is_training,
                                                   trainable=is_training,
-                                                  name="BatchNorm",
+                                                  # name="BatchNorm",
                                                   reuse=reuse)
 
 
