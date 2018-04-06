@@ -2,9 +2,10 @@
 NUM_LABELS: 3 # (background, cosmic, neutrino)
 N_INITIAL_FILTERS:  24
 NETWORK_DEPTH:  4
-RESIDUAL_BLOCKS_PER_LAYER: 3
+RESIDUAL_BLOCKS_PER_LAYER: 5
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
 NPLANES: 3
+BATCH_NORM: True
 
 # training parameters:
 N_MINIBATCH: 1
@@ -36,6 +37,6 @@ ANA_CONFIG:
     KEYWORD_LABEL: 'ana_label'
 
 # General parameters:
-LOGDIR: 'log_sbnd_cosmictagger/3plane_test/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane_heavy/'
 RESTORE: True
 GPU: 0
