@@ -110,7 +110,6 @@ class uresnet_trainer(object):
         start = time.time()
         sys.stdout.write("Begin constructing network\n")
         self._net = uresnet(self._config)
-        print dim_data
         self._net.construct_network(dims=dim_data)
         end = time.time()
         sys.stdout.write("Done constructing network. ({0:.2}s)\n".format(end-start))
