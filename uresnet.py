@@ -37,6 +37,7 @@ class uresnet(object):
             'N_INITIAL_FILTERS',
             'NETWORK_DEPTH',
             'RESIDUAL_BLOCKS_PER_LAYER',
+            'RESIDUAL_BLOCKS_DEEPEST_LAYER',
             'BALANCE_LOSS',
             'BATCH_NORM',
             'LOGDIR',
@@ -352,7 +353,7 @@ class uresnet(object):
         # print "Shape after concat: " + str(x.get_shape())
 
         # At the bottom, do another residual block:
-        for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
+        for j in xrange(self._params['RESIDUAL_BLOCKS_DEEPEST_LAYER']):
             x = residual_block(x, self._params['TRAINING'],
                 batch_norm=self._params['BATCH_NORM'], name="deepest_block_{0}".format(j))
 
