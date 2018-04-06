@@ -110,6 +110,7 @@ class uresnet_trainer(object):
         start = time.time()
         sys.stdout.write("Begin constructing network\n")
         self._net = uresnet(self._config)
+        print dim_data
         self._net.construct_network(dims=dim_data)
         end = time.time()
         sys.stdout.write("Done constructing network. ({0:.2}s)\n".format(end-start))
@@ -175,7 +176,12 @@ class uresnet_trainer(object):
                             self._config['TRAIN_CONFIG']['KEYWORD_WEIGHT']).dim()
                         )
                 else:
-                    minibatch_weight = self.compute_weights(minibatch_label)
+                    if 'BOOST_WEIGHTS' in self._config:
+                        minibatch_weight = self.compute_weights(
+                            minibatch_label,
+                            self._config['BOOST_WEIGHTS'])
+                    else:
+                        minibatch_weight = self.compute_weights(minibatch_label)
             # perform per-event normalization
             io_end = time.time()
             time_io += io_end - io_start
@@ -228,7 +234,7 @@ class uresnet_trainer(object):
             test_weight = None
             if self._config['BALANCE_LOSS']:
                 if 'KEYWORD_WEIGHT' in self._config['TEST_CONFIG']:
-                    minibatch_weight = self._dataloaders.fetch_data(
+                    test_weight = self._dataloaders.fetch_data(
                         self._config['TEST_CONFIG']['KEYWORD_WEIGHT']).data()
                 else:
                     test_weight = self.compute_weights(test_label)
@@ -358,8 +364,9 @@ class uresnet_trainer(object):
                 self.ana_step()
 
 
-    def compute_weights(self, labels):
+    def compute_weights(self, labels, boost_labels = None):
         # Take the labels, and compute the per-label weight
+
 
         # Prepare output weights:
         weights = numpy.zeros(labels.shape)
@@ -372,11 +379,14 @@ class uresnet_trainer(object):
             n_pixels = numpy.sum(counts)
             for value, count in zip(values, counts):
                 weight = 1.0*(n_pixels - count) / n_pixels
+                if boost_labels is not None and value in boost_labels.keys():
+                    weight *= boost_labels[value]
                 mask = labels[i] == value
                 weights[i, mask] += weight
-
             weights[i] *= 1. / numpy.sum(weights[i])
             i += 1
+
+
 
         # Normalize the weights to sum to 1 for each event:
         return weights

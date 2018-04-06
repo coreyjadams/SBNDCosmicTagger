@@ -38,7 +38,7 @@ class uresnet(object):
             'NETWORK_DEPTH',
             'RESIDUAL_BLOCKS_PER_LAYER',
             'BALANCE_LOSS',
-            'BATCH_NORM'
+            'BATCH_NORM',
             'LOGDIR',
             'BASE_LEARNING_RATE',
             'TRAINING',
@@ -65,20 +65,20 @@ class uresnet(object):
         start = time.time()
         # Initialize the input layers:
         self._input_image  = tf.placeholder(tf.float32, dims, name="input_image")
-        self._input_labels = tf.placeholder(tf.int64, dims, name="input_image")
+        self._input_labels = tf.placeholder(tf.int64, dims, name="input_labels")
 
 
-        labels = tf.split(self._input_labels, [1]*self._params['NPLANES'], -1)
+        labels = tf.split(self._input_labels, [1]*self._params['NPLANES'], -1, name="labels_split")
         if self._params['BALANCE_LOSS']:
-            self._input_weights = tf.placeholder(tf.float32, dims, name="input_image")
-            weights = tf.split(self._input_weights, [1]*self._params['NPLANES'], -1)
+            self._input_weights = tf.placeholder(tf.float32, dims, name="input_weights")
+            weights = tf.split(self._input_weights, [1]*self._params['NPLANES'], -1, name="weights_split")
 
         # Prune off the last filter of the labels and weights:
         for p in xrange(len(labels)):
-            labels[p] = tf.squeeze(labels[p], axis=-1)
+            labels[p] = tf.squeeze(labels[p], axis=-1, name="labels_squeeze_{0}".format(p))
 
         for p in xrange(len(weights)):
-            weights[p] = tf.squeeze(weights[p], axis=-1)
+            weights[p] = tf.squeeze(weights[p], axis=-1,name="weights_squeeze_{0}".format(p))
 
         sys.stdout.write(" - Finished input placeholders [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
@@ -150,7 +150,7 @@ class uresnet(object):
                 if self._params['BALANCE_LOSS']:
                     losses = tf.multiply(losses, weights)
 
-                self._loss_by_plane[p] = tf.reduce_mean(tf.reduce_sum(losses, axis=[1,2]))
+                self._loss_by_plane[p] = tf.reduce_sum(tf.reduce_sum(losses, axis=[1,2]))
 
                 # Add the loss to the summary:
                 tf.summary.scalar("Total_Loss_plane{0}".format(p), self._loss_by_plane[p])
