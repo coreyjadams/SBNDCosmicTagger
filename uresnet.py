@@ -165,15 +165,12 @@ class uresnet(object):
         # Optimizer:
         if self._params['TRAINING']:
             with tf.name_scope("training"):
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-
                 self._global_step = tf.Variable(0, dtype=tf.int32,
-                    trainable=False, name='global_step')
-                with tf.control_dependencies(update_ops):
-                    if self._params['BASE_LEARNING_RATE'] <= 0:
-                        opt = tf.train.AdamOptimizer()
-                    else:
-                        opt = tf.train.AdamOptimizer(self._params['BASE_LEARNING_RATE'])
+                trainable=False, name='global_step')
+                if self._params['BASE_LEARNING_RATE'] <= 0:
+                    opt = tf.train.AdamOptimizer()
+                else:
+                    opt = tf.train.AdamOptimizer(self._params['BASE_LEARNING_RATE'])
 
 
                 # Variables for minibatching:
