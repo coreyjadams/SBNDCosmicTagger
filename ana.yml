@@ -1,8 +1,8 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
-N_INITIAL_FILTERS:  24
+N_INITIAL_FILTERS:  8
 NETWORK_DEPTH:  4
-RESIDUAL_BLOCKS_PER_LAYER: 5
+RESIDUAL_BLOCKS_PER_LAYER: 3
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
 NPLANES: 3
 BATCH_NORM: True
@@ -14,7 +14,7 @@ SAVE_ITERATION: 500
 REPORT_ITERATION: 10
 SUMMARY_ITERATION: 5
 BALANCE_LOSS:  True
-BASE_LEARNING_RATE:  0.0001
+BASE_LEARNING_RATE:  0.001
 TRAINING: False
 ITERATIONS: 5
 #TRAIN_CONFIG:
@@ -37,6 +37,6 @@ ANA_CONFIG:
     KEYWORD_LABEL: 'ana_label'
 
 # General parameters:
-LOGDIR: 'log_sbnd_cosmictagger/3plane_heavy/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane/'
 RESTORE: True
 GPU: 0
