@@ -1,0 +1,44 @@
+# network parameters
+NUM_LABELS: 3 # (background, cosmic, neutrino)
+N_INITIAL_FILTERS:  8
+NETWORK_DEPTH:  4
+RESIDUAL_BLOCKS_PER_LAYER: 5
+RESIDUAL_BLOCKS_DEEPEST_LAYER: 15
+LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
+NPLANES: 3
+BATCH_NORM: true
+
+# training parameters:
+N_MINIBATCH: 1
+MINIBATCH_SIZE: 2
+SAVE_ITERATION: 500
+REPORT_ITERATION: 10
+SUMMARY_ITERATION: 5
+BALANCE_LOSS:  True
+BASE_LEARNING_RATE:  0.0001
+TRAINING: False
+ITERATIONS: 2
+#TRAIN_CONFIG:
+#    FILE: './config/train_io.cfg'
+#    FILLER: 'TrainIO'
+#    VERBOSITY: 3
+#    KEYWORD_DATA: 'main_data'
+#    KEYWORD_LABEL: 'main_label'
+
+# TEST_CONFIG:
+#     CONFIG: 'config/test_io.cfg'
+#     FILLER: 'TrainIO'
+#     VERBOSITY: 3
+
+ANA_CONFIG:
+    FILE: './config_threeplane/ana_io.cfg'
+    FILLER: 'ValIO'
+    VERBOSITY: 3
+    KEYWORD_DATA: 'ana_data'
+    KEYWORD_LABEL: 'ana_label'
+    OUTPUT: './config_threeplane/ana_out.cfg'
+
+# General parameters:
+LOGDIR: '/data/sbnd/saved-models/3plane_slower/'
+RESTORE: True
+GPU: 0

@@ -101,6 +101,7 @@ class uresnet_trainer(object):
             sys.stdout.write("Time to start ANA IO: {0:.2}s\n".format(end - start))
 
             if 'OUTPUT' in self._config['ANA_CONFIG']:
+                print "Initializing output file"
                 self._output = larcv.IOManager(self._config['ANA_CONFIG']['OUTPUT'])
                 self._output.initialize()
 
@@ -297,49 +298,53 @@ class uresnet_trainer(object):
             )
 
 
+
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
+
+        for s in softmax:
+            print s.shape
+
+        # self._dataloaders['ana']
+
         if self._output:
-          for entry in xrange(len(softmax)):
-            self._output.read_entry(entry)
-            data  = np.array(batch_data[entry]).reshape(softmax.shape[1:-1])
-            entries   = self._input_main.fetch_entries()
-            event_ids = self._input_main.fetch_event_ids()
+            # for entry in xrange(len(softmax)):
+            #   self._output.read_entry(entry)
+            #   data  = numpy.array(batch_data[entry]).reshape(softmax.shape[1:-1])
+            entries   = self._dataloaders['ana'].fetch_entries()
+            event_ids = self._dataloaders['ana'].fetch_event_ids()
 
-          for entry in xrange(len(softmax)):
-            self._output.read_entry(entries[entry])
-            data  = np.array(batch_data[entry]).reshape(softmax.shape[1:-1])
-            label = np.array(batch_label[entry]).reshape(softmax.shape[1:-1])
 
-            shower_score, track_score = (None,None)
-            data_2d = len(softmax.shape) == 4
-            # 3D case
-            if data_2d:
-              shower_score = softmax[entry,:,:,1]
-              track_score  = softmax[entry,:,:,2]
-            else:
-              shower_score = softmax[entry,:,:,:,1]
-              track_score  = softmax[entry,:,:,:,2]
+            for entry in xrange(self._config['MINIBATCH_SIZE']):
+                self._output.read_entry(entries[entry])
 
-            sum_score = shower_score + track_score
-            shower_score = shower_score / sum_score
-            track_score  = track_score  / sum_score
+                larcv_data = self._output.get_data("image2d","sbndwire")
+                larcv_neut = self._output.get_data("sparse2d","neutrino")
+                larcv_csmc = self._output.get_data("sparse2d","cosmic")
+                for projection_id in range(len(softmax)):
+                    data = batch_data[entry,:,:,projection_id]
+                    nonzero_rows, nonzero_columns  = numpy.where(data > 1.0)
+                    indexes = nonzero_columns * larcv_data.at(projection_id).meta().rows() + nonzero_rows
+                    indexes = indexes.astype(dtype=numpy.uint64)
 
-            ssnet_result = (shower_score > track_score).astype(np.float32) + (track_score >= shower_score).astype(np.float32) * 2.0
-            nonzero_map  = (data > 1.0).astype(np.int32)
-            ssnet_result = (ssnet_result * nonzero_map).astype(np.float32)
+                    cosmic_score = softmax[projection_id][entry,:,:,1]
+                    neutrino_score  = softmax[projection_id][entry,:,:,2]
 
-            if data_2d:
-              larcv_data = self._output.get_data("image2d","data")
-              larcv_out  = self._output.get_data("sparse2d","ssnet")
-              vs = larcv.as_image2d(ssnet_result)
-              sparse3d.set(vs,data.meta())
-            else:
-              larcv_data = self._output.get_data("sparse3d","data")
-              larcv_out  = self._output.get_data("sparse3d","ssnet")
-              vs = larcv.as_tensor3d(ssnet_result)
-              sparse3d.set(vs,data.meta())
-            self._output.save_entry()
+                    mapped_cosmic_score = cosmic_score[nonzero_rows,nonzero_columns].astype(dtype=numpy.float32)
+                    mapped_neutrino_score = neutrino_score[nonzero_rows, nonzero_columns].astype(dtype=numpy.float32)
+
+                    # sum_score = cosmic_score + neutrino_score
+                    # cosmic_score = cosmic_score / sum_score
+                    # neutrino_score  = neutrino_score  / sum_score
+
+                    neutrino_vs = larcv.as_tensor2d(mapped_neutrino_score, indexes)
+                    neutrino_vs.id(projection_id)
+                    larcv_neut.set(neutrino_vs, larcv_data.at(projection_id).meta())
+                    cosmic_vs   = larcv.as_tensor2d(mapped_cosmic_score, indexes)
+                    cosmic_vs.id(projection_id)
+                    larcv_csmc.set(cosmic_vs, larcv_data.at(projection_id).meta())
+
+                self._output.save_entry()
         else:
             print "Acc all: {}, Acc non zero: {}".format(acc_all, acc_nonzero)
 
@@ -361,6 +366,9 @@ class uresnet_trainer(object):
                 self.train_step()
             else:
                 self.ana_step()
+
+        if 'ANA_CONFIG' in self._config and 'OUTPUT' in self._config['ANA_CONFIG']:
+            self._output.finalize()
 
 
     def compute_weights(self, labels, boost_labels = None):
