@@ -1,3 +1,6 @@
+*.log
+*.out
+log*/
 *.root
 
 # Byte-compiled / optimized / DLL files
