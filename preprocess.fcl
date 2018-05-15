@@ -3,8 +3,8 @@ ProcessDriver: {
   EnableFilter:    false
   RandomAccess:    true
   RandomSeed:      0
-  ProcessType:     ["Cluster2DThreshold","CosmicNeutrinoSegLabel","CompressAndEmbed"]
-  ProcessName:     ["Cluster2DThreshold","CosmicNeutrinoSegLabel","CompressAndEmbed"]
+  ProcessType:     ["Cluster2DThreshold","CompressAndEmbed","CosmicNeutrinoSegLabel"]
+  ProcessName:     ["Cluster2DThreshold","CompressAndEmbed","CosmicNeutrinoSegLabel"]
 #  StartEntry:      0
 #  NumEntries:      5
 
@@ -15,8 +15,8 @@ ProcessDriver: {
     OutFileName: "out.root"
     InputFiles:  []
     InputDirs:   []
-    StoreOnlyType: []
-    StoreOnlyName: []
+    StoreOnlyName: ["sbndwire","sbnd_cosmicseg","sbndneutrino","sbndneutrino"]
+    StoreOnlyType: ["image2d","image2d,"particle","cluster2d"]
   }
 
   ProcessList: {
@@ -33,7 +33,7 @@ ProcessDriver: {
       NeutrinoLabel:     2
     }
     CompressAndEmbed: {
-      Producer:          ["sbndwire","sbnd_cosmicseg","sbndvertex","sbndseg_threshold"]
+      Producer:          ["sbndwire","sbnd_cosmicseg","sbndneutrino","sbndseg_threshold"]
       DataType:          ["image2d","image2d","cluster2d","cluster2d"]
       RowCompression:    [2, 2, 2, 2]
       ColCompression:    [2, 2, 2, 2]
