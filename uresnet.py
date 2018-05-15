@@ -36,6 +36,7 @@ class uresnet(object):
             'NPLANES',
             'N_INITIAL_FILTERS',
             'NETWORK_DEPTH',
+            'SHARE_PLANE_WEIGHTS',
             'RESIDUAL_BLOCKS_PER_LAYER',
             'RESIDUAL_BLOCKS_DEEPEST_LAYER',
             'BALANCE_LOSS',
@@ -296,8 +297,15 @@ class uresnet(object):
         # The filters are concatenated at the deepest level
         # And then they are split again into the parallel chains
 
+        verbose = True
+
         # print x.get_shape()
         n_planes = self._params['NPLANES']
+
+        if self._params['SHARE_PLANE_WEIGHTS']:
+            sharing = True
+        else:
+            sharing = False
 
         x = tf.split(x, n_planes*[1], -1)
         # for p in range(len(x)):
@@ -305,14 +313,24 @@ class uresnet(object):
 
         # Initial convolution to get to the correct number of filters:
         for p in range(len(x)):
+            name = "Conv2DInitial"
+            reuse = False
+            if not sharing:
+                name += "_plane{0}".format(p)
+            if sharing and p != 0:
+                reuse = True
+
+            if verbose:
+                print "Name: {0} + reuse: {1}".format(name, reuse)
+
             x[p] = tf.layers.conv2d(x[p], self._params['N_INITIAL_FILTERS'],
                                     kernel_size=[7, 7],
                                     strides=[1, 1],
                                     padding='same',
                                     use_bias=False,
                                     trainable=self._params['TRAINING'],
-                                    name="Conv2DInitial_plane{0}".format(p),
-                                    reuse=None)
+                                    name=name,
+                                    reuse=reuse)
 
             # ReLU:
             x[p] = tf.nn.relu(x[p])
@@ -332,15 +350,43 @@ class uresnet(object):
         for p in xrange(len(x)):
             for i in xrange(self._params['NETWORK_DEPTH']):
 
+
                 for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
+                    name = "resblock_down"
+                    reuse = False
+                    if not sharing:
+                        name += "_plane{0}".format(p)
+                    if sharing and p != 0:
+                        reuse = True
+
+                    name += "_{0}_{1}".format(i, j)
+
+                    if verbose:
+                        print "Name: {0} + reuse: {1}".format(name, reuse)
+
+
                     x[p] = residual_block(x[p], self._params['TRAINING'],
                                           batch_norm=self._params['BATCH_NORM'],
-                                          name="resblock_down_plane{0}_{1}_{2}".format(p, i, j))
+                                          name=name,
+                                          reuse=reuse)
+
+                name = "downsample"
+                reuse = False
+                if not sharing:
+                    name += "_plane{0}".format(p)
+                if sharing and p != 0:
+                    reuse = True
+
+                name += "_{0}".format(i)
+
+                if verbose:
+                    print "Name: {0} + reuse: {1}".format(name, reuse)
 
                 network_filters[p].append(x[p])
                 x[p] = downsample_block(x[p], self._params['TRAINING'],
                                         batch_norm=self._params['BATCH_NORM'],
-                                        name="downsample_plane{0}_{1}".format(p,i))
+                                        name=name,
+                                        reuse=reuse)
 
                 # print "Plane {p}, layer {i}: x[{p}].get_shape(): {s}".format(
                 #     p=p, i=i, s=x[p].get_shape())
@@ -379,12 +425,25 @@ class uresnet(object):
                 # How many filters to return from upsampling?
                 n_filters = network_filters[p][-1].get_shape().as_list()[-1]
 
+
+                name = "upsample"
+                reuse = False
+                if not sharing:
+                    name += "_plane{0}".format(p)
+                if sharing and p != 0:
+                    reuse = True
+
+                name += "_{0}".format(i)
+                if verbose:
+                    print "Name: {0} + reuse: {1}".format(name, reuse)
+
                 # Upsample:
                 x[p] = upsample_block(x[p],
                                       self._params['TRAINING'],
                                       batch_norm=self._params['BATCH_NORM'],
                                       n_output_filters=n_filters,
-                                      name="upsample_plane{0}_{1}".format(p,i))
+                                      name=name,
+                                      reuse=reuse)
 
 
                 x[p] = tf.concat([x[p], network_filters[p][-1]],
@@ -392,37 +451,87 @@ class uresnet(object):
 
                 # Remove the recently concated filters:
                 network_filters[p].pop()
-                with tf.variable_scope("bottleneck_plane{0}_{1}".format(p,i)):
-                    # Include a bottleneck to reduce the number of filters after upsampling:
-                    x[p] = tf.layers.conv2d(x[p],
-                                            n_filters,
-                                            kernel_size=[1,1],
-                                            strides=[1,1],
-                                            padding='same',
-                                            activation=None,
-                                            use_bias=False,
-                                            trainable=self._params['TRAINING'],
-                                            name="BottleneckUpsample_plane{0}_{1}".format(p,i))
+                # with tf.variable_scope("bottleneck_plane{0}_{1}".format(p,i)):
 
-                    x[p] = tf.nn.relu(x[p])
+                name = "BottleneckUpsample"
+                reuse = False
+                if not sharing:
+                    name += "_plane{0}".format(p)
+                if sharing and p != 0:
+                    reuse = True
+
+                name += "_{0}".format(i)
+
+                if verbose:
+                    print "Name: {0} + reuse: {1}".format(name, reuse)
+
+
+                # Include a bottleneck to reduce the number of filters after upsampling:
+                x[p] = tf.layers.conv2d(x[p],
+                                        n_filters,
+                                        kernel_size=[1,1],
+                                        strides=[1,1],
+                                        padding='same',
+                                        activation=None,
+                                        use_bias=False,
+                                        reuse=reuse,
+                                        trainable=self._params['TRAINING'],
+                                        name=name)
+
+                x[p] = tf.nn.relu(x[p])
 
                 # Residual
                 for j in xrange(self._params['RESIDUAL_BLOCKS_PER_LAYER']):
+                    name = "resblock_up"
+                    reuse = False
+                    if not sharing:
+                        name += "_plane{0}".format(p)
+                    if sharing and p != 0:
+                        reuse = True
+
+                    name += "_{0}_{1}".format(i, j)
+
+                    if verbose:
+                        print "Name: {0} + reuse: {1}".format(name, reuse)
+
+
                     x[p] = residual_block(x[p], self._params['TRAINING'],
                                           batch_norm=self._params['BATCH_NORM'],
-                                          name="resblock_up_plane{0}_{1}_{2}".format(p,i, j))
+                                          reuse=reuse,
+                                          name=name)
 
                 # print "Up end, Plane {p}, layer {i}: x[{p}].get_shape(): {s}".format(
                 #     p=p, i=i, s=x[p].get_shape())
 
 
         for p in xrange(len(x)):
+            name = "FinalResidualBlock"
+            reuse = False
+            if not sharing:
+                name += "_plane{0}".format(p)
+            if sharing and p != 0:
+                reuse = True
+
+            if verbose:
+                print "Name: {0} + reuse: {1}".format(name, reuse)
 
 
             x[p] = residual_block(x[p],
                     self._params['TRAINING'],
                     batch_norm=self._params['BATCH_NORM'],
-                    name="FinalResidualBlock_plane{0}".format(p))
+                    reuse=reuse,
+                    name=name)
+
+            name = "BottleneckConv2D"
+            reuse = False
+            if not sharing:
+                name += "_plane{0}".format(p)
+            if sharing and p != 0:
+                reuse = True
+
+            if verbose:
+                print "Name: {0} + reuse: {1}".format(name, reuse)
+
 
             # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
             # We can use a bottleneck to map it onto the right dimensions:
@@ -434,7 +543,8 @@ class uresnet(object):
                                  activation=None,
                                  use_bias=False,
                                  trainable=self._params['TRAINING'],
-                                 name="BottleneckConv2D_plane{0}".format(p))
+                                 reuse=reuse,
+                                 name=name)
             # print x[p].get_shape()
         # The final activation is softmax across the pixels.  It gets applied in the loss function
 #         x = tf.nn.softmax(x)
