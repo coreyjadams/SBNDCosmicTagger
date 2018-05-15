@@ -1,12 +1,13 @@
 # network parameters
 NUM_LABELS: 3 # (background, cosmic, neutrino)
 N_INITIAL_FILTERS:  8
-NETWORK_DEPTH:  4
-RESIDUAL_BLOCKS_PER_LAYER: 5
-RESIDUAL_BLOCKS_DEEPEST_LAYER: 15
+NETWORK_DEPTH:  5
+RESIDUAL_BLOCKS_PER_LAYER: 3
+RESIDUAL_BLOCKS_DEEPEST_LAYER: 8
 LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
 NPLANES: 3
 BATCH_NORM: True
+SHARE_PLANE_WEIGHTS: true
 
 # training parameters:
 N_MINIBATCH: 1
@@ -33,6 +34,6 @@ TEST_CONFIG:
     KEYWORD_LABEL: 'test_label'
 
 # General parameters:
-LOGDIR: 'log_sbnd_cosmictagger/3plane_bn/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane/'
 RESTORE: False
 GPU: 0
