@@ -302,8 +302,8 @@ class uresnet_trainer(object):
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
 
-        for s in softmax:
-            print s.shape
+        #for s in softmax:
+        #    print s.shape
 
         # self._dataloaders['ana']
 
