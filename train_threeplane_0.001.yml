@@ -34,6 +34,6 @@ TEST_CONFIG:
     KEYWORD_LABEL: 'test_label'
 
 # General parameters:
-LOGDIR: 'log_sbnd_cosmictagger/3plane/'
+LOGDIR: 'log_sbnd_cosmictagger/3plane_0.001/'
 RESTORE: True
 GPU: 0
