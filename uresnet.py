@@ -35,6 +35,7 @@ class uresnet(object):
             'NUM_LABELS',
             'NPLANES',
             'N_INITIAL_FILTERS',
+            'VERTEX_FINDING',
             'NETWORK_DEPTH',
             'SHARE_PLANE_WEIGHTS',
             'RESIDUAL_BLOCKS_PER_LAYER',
@@ -69,6 +70,8 @@ class uresnet(object):
         self._input_image  = tf.placeholder(tf.float32, dims, name="input_image")
         self._input_labels = tf.placeholder(tf.int64, dims, name="input_labels")
 
+        if self._params['VERTEX_FINDING']:
+            self._input_vertex = tf.placeholder(tf.float32, dims, name="input_vertex")
 
         labels = tf.split(self._input_labels, [1]*self._params['NPLANES'], -1, name="labels_split")
         if self._params['BALANCE_LOSS']:
@@ -84,7 +87,12 @@ class uresnet(object):
 
         sys.stdout.write(" - Finished input placeholders [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
-        logits_by_plane = self._build_network(self._input_image)
+        logits_by_plane, vertex_by_plane = self._build_network(self._input_image)
+
+        print logits_by_plane[0].get_shape()
+        print vertex_by_plane[0].get_shape()
+
+        exit()
 
         sys.stdout.write(" - Finished Network graph [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
@@ -92,6 +100,9 @@ class uresnet(object):
         #     print "logits_by_plane[{0}].get_shape(): ".format(p) + str(logits_by_plane[p].get_shape())
         self._softmax = [tf.nn.softmax(logits) for logits in logits_by_plane ]
         self._predicted_labels = [ tf.argmax(logits, axis=-1) for logits in logits_by_plane ]
+
+        if self._params['VERTEX_FINDING']:
+            self._sigmoid_vertex = [tf.nn.sigmoid(vtx) for vtx in vertex_by_plane]
 
         # for p in xrange(len(self._softmax)):
         #     print "self._softmax[{0}].get_shape(): ".format(p) + str(self._softmax[p].get_shape())
@@ -136,6 +147,36 @@ class uresnet(object):
             # Add the accuracies to the summary:
             tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
             tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
+
+            if self._params['VERTEX_FINDING']:
+                # Compute the accuracy for the vertex finding
+
+                for p in xrange(len(self._sigmoid_vertex)):
+                    self._total_accuracy[p] = tf.reduce_mean(
+                        tf.cast(tf.equal(self._predicted_labels[p],
+                            labels[p]), tf.float32))
+                    # Find the non zero labels:
+                    non_zero_indices = tf.not_equal(labels[p], tf.constant(0, labels[p].dtype))
+
+                    non_zero_logits = tf.boolean_mask(self._predicted_labels[p], non_zero_indices)
+                    non_zero_labels = tf.boolean_mask(labels[p], non_zero_indices)
+
+                    self._non_bkg_accuracy[p] = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
+
+                    # Add the accuracies to the summary:
+                    tf.summary.scalar("Total_Accuracy_plane{0}".format(p),
+                        self._total_accuracy[p])
+                    tf.summary.scalar("Non_Background_Accuracy_plane{0}".format(p),
+                        self._non_bkg_accuracy[p])
+
+                #Compute the total accuracy and non background accuracy for all planes:
+                self._all_plane_accuracy = tf.reduce_mean(self._total_accuracy)
+                self._all_plane_non_bkg_accuracy = tf.reduce_mean(self._non_bkg_accuracy)
+
+                # Add the accuracies to the summary:
+                tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
+                tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
+
 
         sys.stdout.write(" - Finished accuracy [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
@@ -297,7 +338,7 @@ class uresnet(object):
         # The filters are concatenated at the deepest level
         # And then they are split again into the parallel chains
 
-        verbose = True
+        verbose = False
 
         # print x.get_shape()
         n_planes = self._params['NPLANES']
@@ -503,6 +544,9 @@ class uresnet(object):
                 # print "Up end, Plane {p}, layer {i}: x[{p}].get_shape(): {s}".format(
                 #     p=p, i=i, s=x[p].get_shape())
 
+        # Split here for segmentation labeling and vertex finding.
+
+        presplit_filters = x
 
         for p in xrange(len(x)):
             name = "FinalResidualBlock"
@@ -545,8 +589,57 @@ class uresnet(object):
                                  trainable=self._params['TRAINING'],
                                  reuse=reuse,
                                  name=name)
+            seg_logits = x
             # print x[p].get_shape()
         # The final activation is softmax across the pixels.  It gets applied in the loss function
 #         x = tf.nn.softmax(x)
 
-        return x
+        if self._params['VERTEX_FINDING']:
+            x = presplit_filters
+            for p in xrange(len(x)):
+                name = "FinalResidualBlockVertex"
+                reuse = False
+                if not sharing:
+                    name += "_plane{0}".format(p)
+                if sharing and p != 0:
+                    reuse = True
+
+                if verbose:
+                    print "Name: {0} + reuse: {1}".format(name, reuse)
+
+
+                x[p] = residual_block(x[p],
+                        self._params['TRAINING'],
+                        batch_norm=self._params['BATCH_NORM'],
+                        reuse=reuse,
+                        name=name)
+
+                name = "BottleneckConv2DVertex"
+                reuse = False
+                if not sharing:
+                    name += "_plane{0}".format(p)
+                if sharing and p != 0:
+                    reuse = True
+
+                if verbose:
+                    print "Name: {0} + reuse: {1}".format(name, reuse)
+
+
+                # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
+                # We can use a bottleneck to map it onto the right dimensions:
+                x[p] = tf.layers.conv2d(x[p],
+                                     1,
+                                     kernel_size=[7,7],
+                                     strides=[1, 1],
+                                     padding='same',
+                                     activation=None,
+                                     use_bias=False,
+                                     trainable=self._params['TRAINING'],
+                                     reuse=reuse,
+                                     name=name)
+                vertex_logits = x
+        else:
+            vertex_logits = None
+
+
+        return seg_logits, vertex_logits

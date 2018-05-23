@@ -65,6 +65,7 @@ class uresnet_trainer(object):
             dim_data = self._dataloaders['train'].fetch_data(
                 self._config['TRAIN_CONFIG']['KEYWORD_DATA']).dim()
             end = time.time()
+
             sys.stdout.write("Time to start TRAIN IO: {0:.2}s\n".format(end - start))
 
         if 'TEST_CONFIG' in self._config:
@@ -302,10 +303,7 @@ class uresnet_trainer(object):
         softmax,acc_all,acc_nonzero = self.ana(input_data  = batch_data,
                                                input_label = batch_label)
 
-        #for s in softmax:
-        #    print s.shape
 
-        # self._dataloaders['ana']
 
         if self._output:
             # for entry in xrange(len(softmax)):
