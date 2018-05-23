@@ -304,8 +304,14 @@ class uresnet_trainer(object):
                                                input_label = batch_label)
 
 
+        report_step  = self._iteration % self._config['REPORT_ITERATION'] == 0
 
         if self._output:
+
+            if report_step:
+                print "Step {} - Acc all: {}, Acc non zero: {}".format(self._iteration,
+                    acc_all, acc_nonzero)
+
             # for entry in xrange(len(softmax)):
             #   self._output.read_entry(entry)
             #   data  = numpy.array(batch_data[entry]).reshape(softmax.shape[1:-1])
@@ -346,6 +352,7 @@ class uresnet_trainer(object):
         else:
             print "Acc all: {}, Acc non zero: {}".format(acc_all, acc_nonzero)
 
+
         self._dataloaders['ana'].next(store_entries   = (not self._config['TRAINING']),
                                       store_event_ids = (not self._config['TRAINING']))
 
@@ -363,6 +370,7 @@ class uresnet_trainer(object):
             if self._config['TRAINING']:
                 self.train_step()
             else:
+                self._iteration = i
                 self.ana_step()
 
         if 'ANA_CONFIG' in self._config and 'OUTPUT' in self._config['ANA_CONFIG']:
