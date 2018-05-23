@@ -90,9 +90,9 @@ class uresnet(object):
         logits_by_plane, vertex_by_plane = self._build_network(self._input_image)
 
         print logits_by_plane[0].get_shape()
-        print vertex_by_plane[0].get_shape()
+        # print vertex_by_plane[0].get_shape()
 
-        exit()
+        # exit()
 
         sys.stdout.write(" - Finished Network graph [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
