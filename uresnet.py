@@ -3,6 +3,7 @@ import time
 
 
 import tensorflow as tf
+import numpy
 
 from utils import residual_block, downsample_block, upsample_block
 
@@ -63,7 +64,6 @@ class uresnet(object):
         '''
 
         tf.reset_default_graph()
-
 
         start = time.time()
         # Initialize the input layers:
@@ -159,49 +159,52 @@ class uresnet(object):
             tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
             tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
 
-            # if self._params['VERTEX_FINDING']:
-            #     # Compute the accuracy for the vertex finding
+            if self._params['VERTEX_FINDING']:
+                # Compute the accuracy for the vertex finding
 
-            #     for p in xrange(len(self._sigmoid_vertex)):
+                # Need the index locations for the pixels to compute the mean predicted pixels:
+                y_len = dims[1]
+                x_len = dims[2]
+                y_inds, x_inds = numpy.meshgrid(numpy.arange(0,x_len, dtype=numpy.float32),
+                                                numpy.arange(0,y_len, dtype=numpy.float32))
 
-            #         # Compute the x resolution, y resolution, total resolution (in pixels)
-            #         # As well as the rms in x and y for the prediction.
+
+                for p in xrange(len(self._sigmoid_vertex)):
+
+                    # Compute the x resolution, y resolution, total resolution (in pixels)
+                    # As well as the rms in x and y for the prediction.
+
+                    # Using the mesh grid options allows to just take a weighted average:
+
+                    # Predicted values
+
+                    pred_x_mean = tf.reduce_sum(tf.multiply(x_inds, self._sigmoid_vertex[p]), axis=[1,2])
+                    pred_y_mean = tf.reduce_sum(tf.multiply(y_inds, self._sigmoid_vertex[p]), axis=[1,2])
+
+                    pred_x_mean = pred_x_mean / tf.reduce_sum(self._sigmoid_vertex[p], axis=[1,2])
+                    pred_y_mean = pred_y_mean / tf.reduce_sum(self._sigmoid_vertex[p], axis=[1,2])
+
+                    # True values
+                    true_x_mean = tf.reduce_sum(tf.multiply(x_inds, vertex[p]), axis=[1,2])
+                    true_y_mean = tf.reduce_sum(tf.multiply(y_inds, vertex[p]), axis=[1,2])
+
+                    true_x_mean = true_x_mean / tf.reduce_sum(vertex[p], axis=[1,2])
+                    true_y_mean = true_y_mean / tf.reduce_sum(vertex[p], axis=[1,2])
 
 
-            #         # Find the non zero labels:
-            #         vertex_indices = tf.equal(vertex[p], tf.constant(1, vertex[p].dtype))
+                    # This allows to compute the x, y, and x/y resolution of the means:
+                    x_res = tf.abs(true_x_mean - pred_x_mean)
+                    y_res = tf.abs(true_x_mean - pred_x_mean)
+                    xy_res = tf.sqrt( x_res*x_res + y_res*y_res)
 
-            #         print "Sigmoid_vertex shape: " + str(self._sigmoid_vertex[p].get_shape())
-            #         print "Vertex index shape: " + str(vertex_indices.get_shape())
+                    x_res = tf.reduce_mean(x_res)
+                    y_res = tf.reduce_mean(y_res)
+                    xy_res = tf.reduce_mean(xy_res)
 
-            #         # Find the indices where the prediction is higher than 0.9:
-            #         predicted_vtx  = tf.greater(self._sigmoid_vertex[p],
-            #                                     tf.constant(0.9,
-            #                                                 dtype=self._sigmoid_vertex[p].dtype))
-
-            #         print predicted_vtx.get_shape()
-
-            #         exit()
-
-            #         non_zero_logits = tf.boolean_mask(self._predicted_labels[p], non_zero_indices)
-            #         non_zero_labels = tf.boolean_mask(labels[p], non_zero_indices)
-
-            #         self._non_bkg_accuracy[p] = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
-
-            #         # Add the accuracies to the summary:
-            #         tf.summary.scalar("Total_Accuracy_plane{0}".format(p),
-            #             self._total_accuracy[p])
-            #         tf.summary.scalar("Non_Background_Accuracy_plane{0}".format(p),
-            #             self._non_bkg_accuracy[p])
-
-            #     #Compute the total accuracy and non background accuracy for all planes:
-            #     self._all_plane_accuracy = tf.reduce_mean(self._total_accuracy)
-            #     self._all_plane_non_bkg_accuracy = tf.reduce_mean(self._non_bkg_accuracy)
-
-            #     # Add the accuracies to the summary:
-            #     tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
-            #     tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
-
+                    # Add summaries:
+                    tf.summary.scalar("X_Resolution_Plane{0}".format(p), x_res)
+                    tf.summary.scalar("Y_Resolution_Plane{0}".format(p), x_res)
+                    tf.summary.scalar("XY_Resolution_Plane{0}".format(p), x_res)
 
         sys.stdout.write(" - Finished accuracy [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
