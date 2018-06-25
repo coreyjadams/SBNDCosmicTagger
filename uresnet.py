@@ -72,27 +72,26 @@ class uresnet(object):
 
         if self._params['VERTEX_FINDING']:
             self._input_vertex = tf.placeholder(tf.float32, dims, name="input_vertex")
+            vertex = tf.split(self._input_vertex, [1]*self._params['NPLANES'], -1, name="vertex_split")
 
         labels = tf.split(self._input_labels, [1]*self._params['NPLANES'], -1, name="labels_split")
         if self._params['BALANCE_LOSS']:
             self._input_weights = tf.placeholder(tf.float32, dims, name="input_weights")
             weights = tf.split(self._input_weights, [1]*self._params['NPLANES'], -1, name="weights_split")
 
+
         # Prune off the last filter of the labels and weights:
         for p in xrange(len(labels)):
             labels[p] = tf.squeeze(labels[p], axis=-1, name="labels_squeeze_{0}".format(p))
+            if self._params['VERTEX_FINDING']:
+                vertex[p] = tf.squeeze(vertex[p], axis=-1,name="vertex_squeeze_{0}".format(p))
 
-        for p in xrange(len(weights)):
-            weights[p] = tf.squeeze(weights[p], axis=-1,name="weights_squeeze_{0}".format(p))
+            if self._params['BALANCE_LOSS']:
+                weights[p] = tf.squeeze(weights[p], axis=-1,name="weights_squeeze_{0}".format(p))
 
         sys.stdout.write(" - Finished input placeholders [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
         logits_by_plane, vertex_by_plane = self._build_network(self._input_image)
-
-        print logits_by_plane[0].get_shape()
-        # print vertex_by_plane[0].get_shape()
-
-        # exit()
 
         sys.stdout.write(" - Finished Network graph [{0:.2}s]\n".format(time.time() - start))
         start = time.time()
@@ -122,6 +121,8 @@ class uresnet(object):
         with tf.name_scope('accuracy'):
             self._total_accuracy   = [ [] for i in range(self._params['NPLANES']) ]
             self._non_bkg_accuracy = [ [] for i in range(self._params['NPLANES']) ]
+            self._neut_accuracy    = [ [] for i in range(self._params['NPLANES']) ]
+
             for p in xrange(len(self._predicted_labels)):
                 self._total_accuracy[p] = tf.reduce_mean(
                     tf.cast(tf.equal(self._predicted_labels[p],
@@ -129,16 +130,26 @@ class uresnet(object):
                 # Find the non zero labels:
                 non_zero_indices = tf.not_equal(labels[p], tf.constant(0, labels[p].dtype))
 
+                # Find the neutrino indices:
+                neutrino_indices = tf.equal(labels[p], tf.constant(2, labels[p].dtype))
+
                 non_zero_logits = tf.boolean_mask(self._predicted_labels[p], non_zero_indices)
                 non_zero_labels = tf.boolean_mask(labels[p], non_zero_indices)
 
+                neutrino_logits = tf.boolean_mask(self._predicted_labels[p], neutrino_indices)
+                neutrino_labels = tf.boolean_mask(labels[p], neutrino_indices)
+
                 self._non_bkg_accuracy[p] = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
+                self._neut_accuracy[p]    = tf.reduce_mean(tf.cast(tf.equal(neutrino_logits, neutrino_labels), tf.float32))
 
                 # Add the accuracies to the summary:
                 tf.summary.scalar("Total_Accuracy_plane{0}".format(p),
                     self._total_accuracy[p])
                 tf.summary.scalar("Non_Background_Accuracy_plane{0}".format(p),
                     self._non_bkg_accuracy[p])
+                tf.summary.scalar("Neutrino_Accuracy_plane{0}".format(p),
+                    self._neut_accuracy[p])
+
 
             #Compute the total accuracy and non background accuracy for all planes:
             self._all_plane_accuracy = tf.reduce_mean(self._total_accuracy)
@@ -148,34 +159,48 @@ class uresnet(object):
             tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
             tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
 
-            if self._params['VERTEX_FINDING']:
-                # Compute the accuracy for the vertex finding
+            # if self._params['VERTEX_FINDING']:
+            #     # Compute the accuracy for the vertex finding
 
-                for p in xrange(len(self._sigmoid_vertex)):
-                    self._total_accuracy[p] = tf.reduce_mean(
-                        tf.cast(tf.equal(self._predicted_labels[p],
-                            labels[p]), tf.float32))
-                    # Find the non zero labels:
-                    non_zero_indices = tf.not_equal(labels[p], tf.constant(0, labels[p].dtype))
+            #     for p in xrange(len(self._sigmoid_vertex)):
 
-                    non_zero_logits = tf.boolean_mask(self._predicted_labels[p], non_zero_indices)
-                    non_zero_labels = tf.boolean_mask(labels[p], non_zero_indices)
+            #         # Compute the x resolution, y resolution, total resolution (in pixels)
+            #         # As well as the rms in x and y for the prediction.
 
-                    self._non_bkg_accuracy[p] = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
 
-                    # Add the accuracies to the summary:
-                    tf.summary.scalar("Total_Accuracy_plane{0}".format(p),
-                        self._total_accuracy[p])
-                    tf.summary.scalar("Non_Background_Accuracy_plane{0}".format(p),
-                        self._non_bkg_accuracy[p])
+            #         # Find the non zero labels:
+            #         vertex_indices = tf.equal(vertex[p], tf.constant(1, vertex[p].dtype))
 
-                #Compute the total accuracy and non background accuracy for all planes:
-                self._all_plane_accuracy = tf.reduce_mean(self._total_accuracy)
-                self._all_plane_non_bkg_accuracy = tf.reduce_mean(self._non_bkg_accuracy)
+            #         print "Sigmoid_vertex shape: " + str(self._sigmoid_vertex[p].get_shape())
+            #         print "Vertex index shape: " + str(vertex_indices.get_shape())
 
-                # Add the accuracies to the summary:
-                tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
-                tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
+            #         # Find the indices where the prediction is higher than 0.9:
+            #         predicted_vtx  = tf.greater(self._sigmoid_vertex[p],
+            #                                     tf.constant(0.9,
+            #                                                 dtype=self._sigmoid_vertex[p].dtype))
+
+            #         print predicted_vtx.get_shape()
+
+            #         exit()
+
+            #         non_zero_logits = tf.boolean_mask(self._predicted_labels[p], non_zero_indices)
+            #         non_zero_labels = tf.boolean_mask(labels[p], non_zero_indices)
+
+            #         self._non_bkg_accuracy[p] = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
+
+            #         # Add the accuracies to the summary:
+            #         tf.summary.scalar("Total_Accuracy_plane{0}".format(p),
+            #             self._total_accuracy[p])
+            #         tf.summary.scalar("Non_Background_Accuracy_plane{0}".format(p),
+            #             self._non_bkg_accuracy[p])
+
+            #     #Compute the total accuracy and non background accuracy for all planes:
+            #     self._all_plane_accuracy = tf.reduce_mean(self._total_accuracy)
+            #     self._all_plane_non_bkg_accuracy = tf.reduce_mean(self._non_bkg_accuracy)
+
+            #     # Add the accuracies to the summary:
+            #     tf.summary.scalar("All_Plane_Total_Accuracy", self._all_plane_accuracy)
+            #     tf.summary.scalar("All_Plane_Non_Background_Accuracy", self._all_plane_non_bkg_accuracy)
 
 
         sys.stdout.write(" - Finished accuracy [{0:.2}s]\n".format(time.time() - start))
@@ -191,14 +216,37 @@ class uresnet(object):
                     logits=logits_by_plane[p])
 
                 if self._params['BALANCE_LOSS']:
-                    losses = tf.multiply(losses, weights)
+                    losses = tf.multiply(losses, weights[p])
 
-                self._loss_by_plane[p] = tf.reduce_sum(tf.reduce_sum(losses, axis=[1,2]))
+                self._loss_by_plane[p] = tf.reduce_sum(tf.reduce_sum(losses))
 
                 # Add the loss to the summary:
                 tf.summary.scalar("Total_Loss_plane{0}".format(p), self._loss_by_plane[p])
 
+
+            if self._params['VERTEX_FINDING']:
+                # Compute the loss for the vertex finding
+                self._vertex_loss_by_plane = [ [] for i in range(self._params['NPLANES']) ]
+                for p in xrange(len(vertex_by_plane)):
+
+                    #Unreduced loss, shape [BATCH, L, W]:
+                    losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=vertex[p],
+                        logits=vertex_by_plane[p])
+
+                    if self._params['BALANCE_LOSS']:
+                        losses = tf.multiply(losses, weights[p])
+                    self._vertex_loss_by_plane[p] = tf.reduce_sum(losses)
+                    tf.summary.scalar("Vertex_loss_plane{0}".format(p), self._vertex_loss_by_plane[p])
+
+                self._vertex_loss = tf.reduce_sum(self._vertex_loss_by_plane)
+                tf.summary.scalar("Total_vertex_loss", self._vertex_loss)
+
             self._loss = tf.reduce_sum(self._loss_by_plane)
+
+            if self._params['VERTEX_FINDING']:
+                tf.summary.scalar("Total_label_loss", self._loss)
+                self._loss += self._vertex_loss
+
             tf.summary.scalar("Total_Loss", self._loss)
 
         sys.stdout.write(" - Finished cross entropy [{0:.2}s]\n".format(time.time() - start))
@@ -249,7 +297,7 @@ class uresnet(object):
         return sess.run( [self._apply_gradients], feed_dict = {})
 
 
-    def feed_dict(self, images, labels, weights=None):
+    def feed_dict(self, images, labels, vertex=None, weights=None):
         '''Build the feed dict
 
         Take input images, labels and (optionally) weights and match
@@ -272,6 +320,9 @@ class uresnet(object):
         fd.update({self._input_image : images})
         if labels is not None:
             fd.update({self._input_labels : labels})
+        if vertex is not None:
+            fd.update({self._input_vertex : vertex})
+
         if self._params['TRAINING'] and self._params['BALANCE_LOSS']:
             if weights is None:
                 raise IncompleteFeedDict("Missing Weights when loss balancing requested.")
@@ -282,19 +333,22 @@ class uresnet(object):
     def losses():
         pass
 
-    def make_summary(self, sess, input_data, input_label, input_weight=None):
+    def make_summary(self, sess, input_data, input_label, input_vertex=None, input_weight=None):
+        print "Weight Shape: " + str(input_weight.shape)
         fd = self.feed_dict(images  = input_data,
                             labels  = input_label,
+                            vertex  = input_vertex,
                             weights = input_weight)
         return sess.run(self._merged_summary, feed_dict=fd)
 
     def zero_gradients(self, sess):
         sess.run(self._zero_gradients)
 
-    def accum_gradients(self, sess, input_data, input_label, input_weight=None):
+    def accum_gradients(self, sess, input_data, input_label, input_vertex=None, input_weight=None):
 
         feed_dict = self.feed_dict(images  = input_data,
                                    labels  = input_label,
+                                   vertex  = input_vertex,
                                    weights = input_weight)
 
         ops = [self._accum_gradients]
@@ -306,9 +360,10 @@ class uresnet(object):
         return sess.run(ops, feed_dict = feed_dict ), doc
 
 
-    def run_test(self,sess, input_data, input_label, input_weight=None):
+    def run_test(self,sess, input_data, input_label, input_vertex, input_weight=None):
         feed_dict = self.feed_dict(images   = input_data,
                                    labels   = input_label,
+                                   vertex   = input_vertex,
                                    weights  = input_weight)
 
         ops = [self._loss, self._all_plane_accuracy, self._all_plane_non_bkg_accuracy]
@@ -546,7 +601,7 @@ class uresnet(object):
 
         # Split here for segmentation labeling and vertex finding.
 
-        presplit_filters = x
+        presplit_filters = [ layer for layer in x ]
 
         for p in xrange(len(x)):
             name = "FinalResidualBlock"
@@ -589,14 +644,15 @@ class uresnet(object):
                                  trainable=self._params['TRAINING'],
                                  reuse=reuse,
                                  name=name)
-            seg_logits = x
+
+        seg_logits = x
             # print x[p].get_shape()
         # The final activation is softmax across the pixels.  It gets applied in the loss function
 #         x = tf.nn.softmax(x)
 
         if self._params['VERTEX_FINDING']:
-            x = presplit_filters
-            for p in xrange(len(x)):
+            x_vtx = presplit_filters
+            for p in xrange(len(x_vtx)):
                 name = "FinalResidualBlockVertex"
                 reuse = False
                 if not sharing:
@@ -608,7 +664,7 @@ class uresnet(object):
                     print "Name: {0} + reuse: {1}".format(name, reuse)
 
 
-                x[p] = residual_block(x[p],
+                x_vtx[p] = residual_block(x_vtx[p],
                         self._params['TRAINING'],
                         batch_norm=self._params['BATCH_NORM'],
                         reuse=reuse,
@@ -627,9 +683,9 @@ class uresnet(object):
 
                 # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
                 # We can use a bottleneck to map it onto the right dimensions:
-                x[p] = tf.layers.conv2d(x[p],
+                x_vtx[p] = tf.layers.conv2d(x_vtx[p],
                                      1,
-                                     kernel_size=[7,7],
+                                     kernel_size=[5,5],
                                      strides=[1, 1],
                                      padding='same',
                                      activation=None,
@@ -637,7 +693,11 @@ class uresnet(object):
                                      trainable=self._params['TRAINING'],
                                      reuse=reuse,
                                      name=name)
-                vertex_logits = x
+
+                # This comes out with one filter but it should really by one dimension reduced:
+                x_vtx[p] = tf.squeeze(x_vtx[p], axis=-1)
+
+            vertex_logits = x_vtx
         else:
             vertex_logits = None
 

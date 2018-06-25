@@ -183,6 +183,16 @@ class uresnet_trainer(object):
                             self._config['BOOST_WEIGHTS'])
                     else:
                         minibatch_weight = self.compute_weights(minibatch_label)
+
+            minibatch_label_vertex = None
+            if self._config['VERTEX_FINDING']:
+                minibatch_label_vertex  = self._dataloaders['train'].fetch_data(
+                    self._config['TRAIN_CONFIG']['KEYWORD_VERTEX']).data()
+                minibatch_label_vertex = numpy.reshape(
+                    minibatch_label_vertex, self._dataloaders['train'].fetch_data(
+                        self._config['TRAIN_CONFIG']['KEYWORD_VERTEX']).dim()
+                    )
+
             # perform per-event normalization
             io_end = time.time()
             time_io += io_end - io_start
@@ -191,6 +201,7 @@ class uresnet_trainer(object):
             res,doc = self._net.accum_gradients(sess         = self._sess,
                                                 input_data   = minibatch_data,
                                                 input_label  = minibatch_label,
+                                                input_vertex = minibatch_label_vertex,
                                                 input_weight = minibatch_weight)
             gpu_end  = time.time()
             time_gpu = gpu_end - gpu_start
@@ -240,6 +251,15 @@ class uresnet_trainer(object):
                 else:
                     test_weight = self.compute_weights(test_label)
 
+            test_label_vertex = None
+            if self._config['VERTEX_FINDING']:
+                test_label_vertex  = self._dataloaders['test'].fetch_data(
+                    self._config['TEST_CONFIG']['KEYWORD_VERTEX']).data()
+                test_label_vertex = numpy.reshape(
+                    test_label_vertex, self._dataloaders['test'].fetch_data(
+                        self._config['TEST_CONFIG']['KEYWORD_VERTEX']).dim()
+                    )
+
         # Report
         if report_step:
             sys.stdout.write('@ iteration {}\n'.format(self._iteration))
@@ -255,12 +275,17 @@ class uresnet_trainer(object):
         if summary_step:
             # Run summary
             self._writer.add_summary(self._net.make_summary(self._sess,
-                                                            minibatch_data,
-                                                            minibatch_label,
-                                                            minibatch_weight),
+                                                            input_data   = minibatch_data,
+                                                            input_label  = minibatch_label,
+                                                            input_vertex = minibatch_label_vertex,
+                                                            input_weight = minibatch_weight),
                                      self._iteration)
             if 'TEST_CONFIG' in self._config:
-                self._writer_test.add_summary(self._net.make_summary(self._sess, test_data, test_label, test_weight),
+                self._writer_test.add_summary(self._net.make_summary(self._sess,
+                                                                     input_data   = test_data,
+                                                                     input_label  = test_label,
+                                                                     input_vertex = test_label_vertex,
+                                                                     input_weight = test_weight),
                                               self._iteration)
 
         # Save snapshot
