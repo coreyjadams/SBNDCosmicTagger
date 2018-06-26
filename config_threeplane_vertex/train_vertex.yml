@@ -1,0 +1,46 @@
+# network parameters
+NUM_LABELS: 3 # (background, cosmic, neutrino)
+N_INITIAL_FILTERS:  8
+NETWORK_DEPTH:  5
+RESIDUAL_BLOCKS_PER_LAYER: 3
+RESIDUAL_BLOCKS_DEEPEST_LAYER: 6
+LABEL_NAMES:  ['background', 'cosmic', 'neutrino']
+NPLANES: 3
+BATCH_NORM: true
+SHARE_PLANE_WEIGHTS: true
+
+BOOST_WEIGHTS:
+    2: 5
+
+VERTEX_FINDING: true
+
+# training parameters:
+N_MINIBATCH: 8
+MINIBATCH_SIZE: 1
+SAVE_ITERATION: 500
+REPORT_ITERATION: 10
+SUMMARY_ITERATION: 10
+BALANCE_LOSS:  True
+BASE_LEARNING_RATE:  0.0002
+TRAINING: True
+ITERATIONS: 30
+TRAIN_CONFIG:
+    FILE: './config_threeplane_vertex/train_io.cfg'
+    FILLER: 'TrainIO'
+    VERBOSITY: 3
+    KEYWORD_DATA:   'main_data'
+    KEYWORD_LABEL:  'main_label'
+    KEYWORD_VERTEX: 'main_label_vertex'
+
+TEST_CONFIG:
+    FILE: './config_threeplane_vertex/test_io.cfg'
+    FILLER: 'TestIO'
+    VERBOSITY: 3
+    KEYWORD_DATA:   'test_data'
+    KEYWORD_LABEL:  'test_label'
+    KEYWORD_VERTEX: 'test_label_vertex'
+
+# General parameters:
+LOGDIR: 'log_sbnd_cosmictagger_vertex/run1/'
+RESTORE: False
+GPU: 0
