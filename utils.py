@@ -176,18 +176,24 @@ def downsample_block(input_tensor,
             # ReLU:
             x = tf.nn.relu(x)
 
+        # This is the pooling approach, which pads with zeros tensors
+        # to make the number of filters align.
+
         # # Map the input tensor to the output tensor with a 1x1 convolution
         # with tf.variable_scope(name+"identity"):
-        #     y = tf.layers.conv2d(input_tensor,
-        #                          n_filters,
-        #                          kernel_size=[1, 1],
-        #                          strides=[2, 2],
-        #                          padding='same',
-        #                          activation=None,
-        #                          use_bias=False,
-        #                          trainable=is_training,
-        #                          name="Conv2D1x1",
-        #                          reuse=reuse)
+        #     print "input_tensor.get_shape(): " + str(input_tensor.get_shape())
+        #     y = tf.layers.average_pooling2d(input_tensor,
+        #                                     pool_size=[2, 2],
+        #                                     strides=[2, 2],
+        #                                     padding='same')
+        #     print "y.get_shape(): " + str(y.get_shape())
+        #     print "x.get_shape(): " + str(x.get_shape())
+
+        #     # Add zero filters:
+        #     n_needed_filters = x.get_shape().as_list()[-1]
+        #     n_available_filters = y.get_shape().as_list()[-1]
+
+        #     n_filters_zero = n_needed_filters - n_available_filters
 
         # # Sum the input and the output:
         # with tf.variable_scope(name+"_add"):

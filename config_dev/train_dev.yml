@@ -16,7 +16,7 @@ VERTEX_FINDING: true
 
 # training parameters:
 N_MINIBATCH: 1
-MINIBATCH_SIZE: 1
+MINIBATCH_SIZE: 2
 SAVE_ITERATION: 10
 REPORT_ITERATION: 1
 SUMMARY_ITERATION: 5
@@ -28,15 +28,17 @@ TRAIN_CONFIG:
     FILE: './config_dev/train_io.cfg'
     FILLER: 'TrainIO'
     VERBOSITY: 3
-    KEYWORD_DATA:  'main_data'
-    KEYWORD_LABEL: 'main_label'
+    KEYWORD_DATA:   'main_data'
+    KEYWORD_LABEL:  'main_label'
+    KEYWORD_VERTEX: 'main_label_vertex'
 
 # TEST_CONFIG:
 #     FILE: './config_singleplane/test_io.cfg'
 #     FILLER: 'TestIO'
 #     VERBOSITY: 3
-#     KEYWORD_DATA:  'test_data'
-#     KEYWORD_LABEL: 'test_label'
+#     KEYWORD_DATA:   'test_data'
+#     KEYWORD_LABEL:  'test_label'
+#     KEYWORD_VERTEX: 'test_label_vertex'
 
 # General parameters:
 LOGDIR: 'log_sbnd_cosmictagger/bn_dev/'
