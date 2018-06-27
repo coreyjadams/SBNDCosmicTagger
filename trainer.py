@@ -266,7 +266,7 @@ class uresnet_trainer(object):
             sys.stdout.write('Train set: ')
             self._report(numpy.mean(self._batch_metrics,axis=0),self._descr_metrics)
             if 'test' in self._dataloaders:
-                res,doc = self._net.run_test(self._sess, test_data, test_label, test_weight)
+                res,doc = self._net.run_test(self._sess, test_data, test_label, test_label_vertex, test_weight)
                 sys.stdout.write('Test set: ')
                 self._report(res,doc)
             sys.stdout.write(" -- IO Time: {0:.2}s\t GPU Time: {1:.2}s\n".format(time_io, time_gpu))
